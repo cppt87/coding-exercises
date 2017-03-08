@@ -1,0 +1,35 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"id": "ryanair-route-resource.json",
+	"title": "Ryanair Route Resource schema",
+	"description": "This object represents a route based on the airport's IATA codes",
+	"type": "object",
+	"properties": {
+		"airportFrom": {
+			"type": "string",
+			"description": "A departure airport IATA code"
+		},
+		"airportTo": {
+			"type": "string",
+			"description": "An arrival airport IATA code"
+		},
+		"connectingAirport": {
+			"type": "string",
+			"description": "A connecting airport IATA code"
+		},
+		"newRoute": {
+			"type": "boolean",
+			"description": "Is the route a new one?"
+		},
+		"seasonalRoute": {
+			"type": "boolean",
+			"description": "Is the route seasonal?"
+		}
+	},
+	"required": [
+		"airportFrom",
+		"airportTo",
+		"newRoute",
+		"seasonalRoute"
+	]
+}
