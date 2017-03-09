@@ -1,5 +1,5 @@
 
-package com.ryanair.api.resources;
+package com.ryanair.apis.resources;
 
 import java.util.Date;
 import java.util.HashMap;

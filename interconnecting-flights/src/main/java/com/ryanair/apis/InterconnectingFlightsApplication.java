@@ -1,4 +1,4 @@
-package com.ryanair.api;
+package com.ryanair.apis;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
