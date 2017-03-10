@@ -1,5 +1,5 @@
 
-package com.ryanair.apis.resources;
+package com.ryanair.apis.models;
 
 import java.util.HashMap;
 import java.util.LinkedHashSet;

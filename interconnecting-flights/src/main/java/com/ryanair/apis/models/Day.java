@@ -1,5 +1,5 @@
 
-package com.ryanair.apis.resources;
+package com.ryanair.apis.models;
 
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -19,81 +19,79 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 
 
 /**
- * Solution Resource schema
- * <p>
- * This object represents a flight departing from a given departure airport not earlier than the specified departure datetime and arriving to a given arrival airport not later than the specified arrival datetime
+ * List of flights scheduled in a day
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-    "stops",
-    "legs"
+    "day",
+    "fligths"
 })
-public class SolutionResource {
+public class Day {
 
     /**
-     * Flight's number of stops
+     * A day of a month
      * (Required)
      * 
      */
-    @JsonProperty("stops")
-    @JsonPropertyDescription("Flight's number of stops")
-    private Integer stops;
+    @JsonProperty("day")
+    @JsonPropertyDescription("A day of a month")
+    private Integer day;
     /**
-     * List of legs that a flight is composed of
+     * A list of flights for given day
      * <p>
      * 
      * (Required)
      * 
      */
-    @JsonProperty("legs")
+    @JsonProperty("fligths")
     @JsonDeserialize(as = java.util.LinkedHashSet.class)
-    private Set<Leg> legs = new LinkedHashSet<Leg>();
+    private Set<Fligth> fligths = new LinkedHashSet<Fligth>();
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     /**
-     * Flight's number of stops
+     * A day of a month
      * (Required)
      * 
      */
-    @JsonProperty("stops")
-    public Integer getStops() {
-        return stops;
+    @JsonProperty("day")
+    public Integer getDay() {
+        return day;
     }
 
     /**
-     * Flight's number of stops
+     * A day of a month
      * (Required)
      * 
      */
-    @JsonProperty("stops")
-    public void setStops(Integer stops) {
-        this.stops = stops;
+    @JsonProperty("day")
+    public void setDay(Integer day) {
+        this.day = day;
     }
 
     /**
-     * List of legs that a flight is composed of
+     * A list of flights for given day
      * <p>
      * 
      * (Required)
      * 
      */
-    @JsonProperty("legs")
-    public Set<Leg> getLegs() {
-        return legs;
+    @JsonProperty("fligths")
+    public Set<Fligth> getFligths() {
+        return fligths;
     }
 
     /**
-     * List of legs that a flight is composed of
+     * A list of flights for given day
      * <p>
      * 
      * (Required)
      * 
      */
-    @JsonProperty("legs")
-    public void setLegs(Set<Leg> legs) {
-        this.legs = legs;
+    @JsonProperty("fligths")
+    public void setFligths(Set<Fligth> fligths) {
+        this.fligths = fligths;
     }
 
     @Override
@@ -113,7 +111,7 @@ public class SolutionResource {
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(stops).append(legs).append(additionalProperties).toHashCode();
+        return new HashCodeBuilder().append(day).append(fligths).append(additionalProperties).toHashCode();
     }
 
     @Override
@@ -121,11 +119,11 @@ public class SolutionResource {
         if (other == this) {
             return true;
         }
-        if ((other instanceof SolutionResource) == false) {
+        if ((other instanceof Day) == false) {
             return false;
         }
-        SolutionResource rhs = ((SolutionResource) other);
-        return new EqualsBuilder().append(stops, rhs.stops).append(legs, rhs.legs).append(additionalProperties, rhs.additionalProperties).isEquals();
+        Day rhs = ((Day) other);
+        return new EqualsBuilder().append(day, rhs.day).append(fligths, rhs.fligths).append(additionalProperties, rhs.additionalProperties).isEquals();
     }
 
 }
