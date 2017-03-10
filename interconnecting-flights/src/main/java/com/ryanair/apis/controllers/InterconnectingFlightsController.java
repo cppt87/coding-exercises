@@ -1,5 +1,9 @@
 package com.ryanair.apis.controllers;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,21 +30,42 @@ public class InterconnectingFlightsController {
 			@RequestParam(value = "departureDateTime", required = true) String departureDateTime,
 			@RequestParam(value = "arrivalDateTime", required = true) String arrivalDateTime) {
 
-		// ArrayNode resources = routesResponse.getBody();
+		RyanairRouteResource[] routes = restTemplate.getForObject(ROUTES_ENDPOINT, RyanairRouteResource[].class);
 
-		// StringBuilder builder = new StringBuilder();
-		// for (int i = 0; i < resources.length; i++) {
-		// builder.append("Ryanair serves a flight from
-		// ").append(resources[i].getAirportFrom()).append(" to ")
-		// .append(resources[i].getAirportTo()).append("<br />");
-		// }
+		List<List<String>> foundRoutes = new ArrayList<List<String>>();
+		Properties matrix = new Properties();
 
-		// HttpResponse<Author> authorResponse =
-		// Unirest.get("http://httpbin.org/books/{id}/author")
-		// .routeParam("id", bookObject.getId())
-		// .asObject(Author.class);
-		//
-		// Author authorObject = authorResponse.getBody();
-		return restTemplate.getForObject(ROUTES_ENDPOINT, RyanairRouteResource[].class);
+		for (RyanairRouteResource route : routes) {
+			if (departure.equalsIgnoreCase(route.getAirportFrom()) && arrival.equalsIgnoreCase(route.getAirportTo())) {
+				List<String> zeroStopRoute = new ArrayList<String>(2);
+				zeroStopRoute.add(departure);
+				zeroStopRoute.add(arrival);
+				foundRoutes.add(zeroStopRoute);
+			} else if (departure.equalsIgnoreCase(route.getAirportFrom())
+					&& !arrival.equalsIgnoreCase(route.getAirportTo())) {
+				if (matrix.containsKey(route.getAirportTo())) {
+					List<String> oneStopRoute = new ArrayList<String>(3);
+					oneStopRoute.add(departure);
+					oneStopRoute.add(route.getAirportTo());
+					oneStopRoute.add(arrival);
+					foundRoutes.add(oneStopRoute);
+				} else {
+					matrix.put(route.getAirportTo(), departure);
+				}
+			} else if (!departure.equalsIgnoreCase(route.getAirportFrom())
+					&& arrival.equalsIgnoreCase(route.getAirportTo())) {
+				if (matrix.containsKey(route.getAirportFrom())) {
+					List<String> oneStopRoute = new ArrayList<String>(3);
+					oneStopRoute.add(departure);
+					oneStopRoute.add(route.getAirportFrom());
+					oneStopRoute.add(arrival);
+					foundRoutes.add(oneStopRoute);
+				} else {
+					matrix.put(route.getAirportFrom(), arrival);
+				}
+			}
+		}
+
+		return routes;
 	}
 }
