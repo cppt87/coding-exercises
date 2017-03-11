@@ -1,0 +1,49 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"id": "error-resource.json",
+	"title": "Error Resource schema",
+	"description": "This object represents a common error object",
+	"definitions": {
+		"error": {
+			"description": "A single error",
+			"type": "object",
+			"properties": {
+				"status": {
+					"type": "string",
+					"description": "HTTP status"
+				},
+				"source": {
+					"type": "string",
+					"description": "URL",
+					"format": "URL"
+				},
+				"title": {
+					"type": "string",
+					"description": "Error title"
+				},
+				"detail": {
+					"type": "string",
+					"description": "Error detail"
+				}
+			},
+			"required": [
+				"status",
+				"title"
+			]
+		}
+	},
+	"type": "object",
+	"properties": {
+		"errors": {
+			"type": "array",
+			"title": "List of errors reported",
+			"items": {
+				"$ref": "#definitions/error"
+			},
+			"uniqueItems": true
+		}
+	},
+	"required": [
+		"errors"
+	]
+}
