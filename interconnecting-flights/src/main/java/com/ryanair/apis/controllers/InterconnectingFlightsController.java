@@ -1,12 +1,9 @@
 package com.ryanair.apis.controllers;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -27,161 +24,301 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ryanair.apis.InterconnectingFlightsRestURIConstants;
 import com.ryanair.apis.models.Day;
 import com.ryanair.apis.models.Flight;
 import com.ryanair.apis.models.Leg;
+import com.ryanair.apis.models.SuitableRoutesList;
 import com.ryanair.apis.models.RyanairRouteResource;
 import com.ryanair.apis.models.RyanairScheduleResource;
 import com.ryanair.apis.models.SolutionResource;
 import com.ryanair.apis.services.IRyanairAPIsService;
+import com.ryanair.apis.utils.DirectFlightEnum;
+import com.ryanair.apis.utils.InterconnectingFlightsUtils;
 
 @RestController
 @Validated
 public class InterconnectingFlightsController {
+	// constants definition
 	private static final int DEPARTURE = 0;
 	private static final int STOP = 1;
 	private static final int ARRIVAL = 2;
-
 	@Autowired
-	IRyanairAPIsService ryanairService;
+	// Ryanair APIs
+	private IRyanairAPIsService ryanairService;
+	@Autowired
+	// Cache of RyanairScheduleResource instances
+	private Map<String, RyanairScheduleResource> cache;
+	@Autowired
+	// LIFO queue of solutions
+	private Stack<SolutionResource> solutions;
 
-	@GetMapping(InterconnectingFlightsRestURIConstants.GET_INTERCONNECTIONS)
+	@GetMapping(InterconnectingFlightsUtils.GET_INTERCONNECTIONS)
 	public ResponseEntity<Stack<SolutionResource>> routes(
-			@Pattern(regexp = "^[a-zA-Z]{3}$", message = "Provided departure [%s] is not a valid IATA airport code. It must be 3 characters long") @RequestParam(value = "departure", required = true) String departure,
-			@Pattern(regexp = "^[a-zA-Z]{3}$", message = "Provided arrival [%s] is not a valid IATA airport code. It must be 3 characters long") @RequestParam(value = "arrival", required = true) String arrival,
-			@RequestParam(value = "departureDateTime", required = true) @Future(message = "Departure date must be in the future") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") Date departureDateTime,
-			@RequestParam(value = "arrivalDateTime", required = true) @Future(message = "Arrival date must be in the future") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") Date arrivalDateTime) {
+			@Pattern(regexp = InterconnectingFlightsUtils.IATA_REGEXP, message = InterconnectingFlightsUtils.IATA_DEP_ERROR_VALIDATION_MSG) @RequestParam(value = "departure", required = true) String departure,
+			@Pattern(regexp = InterconnectingFlightsUtils.IATA_REGEXP, message = InterconnectingFlightsUtils.IATA_ARR_ERROR_VALIDATION_MSG) @RequestParam(value = "arrival", required = true) String arrival,
+			@RequestParam(value = "departureDateTime", required = true) @Future(message = InterconnectingFlightsUtils.DATE_DEP_ERROR_VALIDATION_MSG) @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") Date departureDateTime,
+			@RequestParam(value = "arrivalDateTime", required = true) @Future(message = InterconnectingFlightsUtils.DATE_ARR_ERROR_VALIDATION_MSG) @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") Date arrivalDateTime) {
 
+		// retrieve the routes list from Ryanair's Routes API service
 		RyanairRouteResource[] routes = this.ryanairService.routesAPI();
-
-		List<List<String>> foundRoutes = new ArrayList<List<String>>();
+		/*
+		 * list of 0 and/or 1 stop routes. Later we will iterate over a useful
+		 * list of this type: [["DUB", "WRO"], ["DUB", "STN", "WRO"]]. List is
+		 * ordered; if a direct flight exists, it will be the first element.
+		 */
+		SuitableRoutesList<String> foundRoutes = new SuitableRoutesList<String>();
+		/*
+		 * In order to extract all the 1 stop flights, we need to create such an
+		 * adjacency list: [key=STOP -> value=FROM || key=STOP -> value=TO].
+		 */
 		Properties graph = new Properties();
 
+		// for each route coming from Ryanair's Routes API service
 		for (RyanairRouteResource route : routes) {
+			// case of direct flight: same departure and arrival
 			if (departure.equalsIgnoreCase(route.getAirportFrom()) && arrival.equalsIgnoreCase(route.getAirportTo())) {
-				List<String> zeroStopRoute = new ArrayList<String>(2);
-				zeroStopRoute.add(DEPARTURE, departure);
-				zeroStopRoute.add(STOP, arrival);
-				foundRoutes.add(zeroStopRoute);
+				this.createAndAddRoute(departure, arrival, foundRoutes);
+				// case of 1 stop flight: same departure and different arrival
 			} else if (departure.equalsIgnoreCase(route.getAirportFrom())
 					&& !arrival.equalsIgnoreCase(route.getAirportTo())) {
-				if (graph.containsKey(route.getAirportTo())) {
-					List<String> oneStopRoute = new ArrayList<String>(3);
-					oneStopRoute.add(DEPARTURE, departure);
-					oneStopRoute.add(STOP, route.getAirportTo());
-					oneStopRoute.add(ARRIVAL, arrival);
-					foundRoutes.add(oneStopRoute);
-				} else {
+				/*
+				 * if the adjacency list already contains the key=STOP
+				 * (different arrival), an insert of type key=STOP -> value=TO
+				 * already took place previously
+				 */
+				if (graph.containsKey(route.getAirportTo()))
+					this.createAndAddRoute(departure, route.getAirportTo(), arrival, foundRoutes);
+				/*
+				 * otherwise, perform the insert key=STOP -> value=FROM
+				 */
+				else
 					graph.put(route.getAirportTo(), departure);
-				}
+				// case of 1 stop flight: same arrival and different departure
 			} else if (!departure.equalsIgnoreCase(route.getAirportFrom())
 					&& arrival.equalsIgnoreCase(route.getAirportTo())) {
-				if (graph.containsKey(route.getAirportFrom())) {
-					List<String> oneStopRoute = new ArrayList<String>(3);
-					oneStopRoute.add(DEPARTURE, departure);
-					oneStopRoute.add(STOP, route.getAirportFrom());
-					oneStopRoute.add(ARRIVAL, arrival);
-					foundRoutes.add(oneStopRoute);
-				} else {
+				/*
+				 * if the adjacency list already contains the key=STOP
+				 * (different arrival), an insert of type key=STOP -> value=FROM
+				 * already took place previously
+				 */
+				if (graph.containsKey(route.getAirportFrom()))
+					this.createAndAddRoute(departure, route.getAirportFrom(), arrival, foundRoutes);
+				/*
+				 * otherwise, perform the insert key=STOP -> value=TO
+				 */
+				else
 					graph.put(route.getAirportFrom(), arrival);
-				}
 			}
 		}
-
 		// convert Date(s) to LocalDate(s)
-		LocalDateTime departureLocalDateTime = departureDateTime.toInstant().atZone(ZoneId.systemDefault())
-				.toLocalDateTime();
-		LocalDateTime arrivalLocalDateTime = arrivalDateTime.toInstant().atZone(ZoneId.systemDefault())
-				.toLocalDateTime();
-
-		// create a cache where store checked schedules
-		Map<String, RyanairScheduleResource> cache = new HashMap<String, RyanairScheduleResource>();
-		// create list of solutions to be returned
-		Stack<SolutionResource> solutions = new Stack<SolutionResource>();
+		LocalDateTime departureLocalDateTime = InterconnectingFlightsUtils.dateToLocalDateTime(departureDateTime);
+		LocalDateTime arrivalLocalDateTime = InterconnectingFlightsUtils.dateToLocalDateTime(arrivalDateTime);
 		// for each route
 		for (List<String> foundRoute : foundRoutes) {
-			// GOOD LUCK!
-			this.combineSolutions(foundRoute, departureLocalDateTime, arrivalLocalDateTime, cache, solutions);
+			// calculate solutions
+			this.combineSolutions(foundRoute, departureLocalDateTime, arrivalLocalDateTime);
 		}
 
-		return solutions.isEmpty() ? new ResponseEntity<Stack<SolutionResource>>(HttpStatus.NOT_FOUND)
-				: new ResponseEntity<Stack<SolutionResource>>(solutions, HttpStatus.OK);
-
+		return this.solutions.isEmpty() ? new ResponseEntity<Stack<SolutionResource>>(HttpStatus.NOT_FOUND)
+				: new ResponseEntity<Stack<SolutionResource>>(this.solutions, HttpStatus.OK);
 	}
 
-	private void combineSolutions(List<String> route, LocalDateTime departureTime, LocalDateTime arrivalTime,
-			Map<String, RyanairScheduleResource> cache, Stack<SolutionResource> solutions) {
-		// create list of year
-		while (departureTime.isBefore(arrivalTime)) {
-			StringBuilder builder = new StringBuilder(route.get(DEPARTURE)).append(route.get(STOP))
-					.append(departureTime.getYear()).append(departureTime.getMonthValue());
-			String key = builder.toString();
+	/**
+	 * Creates the list of 0 and/or 1 stop solutions, managing a certain route.
+	 * In case of 1 stop solution (a list of three IATA codes), it behaves
+	 * recursively: for each suitable {@link Leg} based on first two codes of
+	 * the route, it applies itself over the second an the third elements of the
+	 * list (namely the second {@link Leg})
+	 * 
+	 * @param route
+	 *            list of IATA codes. Two elements if direct, three if not
+	 * @param departureTime
+	 *            the departure input time
+	 * @param arrivalTime
+	 *            the arrival input time
+	 */
+	private void combineSolutions(List<String> route, LocalDateTime departureTime, LocalDateTime arrivalTime) {
+		// cycle over input temporal range
+		while (!departureTime.isAfter(arrivalTime)) {
+			/*
+			 * create a unique cache key based on concatenation of departure
+			 * IATA code, arrival IATA code, departure year and departure month
+			 */
+			String key = new StringBuilder(route.get(DEPARTURE)).append(route.get(STOP)).append(departureTime.getYear())
+					.append(departureTime.getMonthValue()).toString();
+			// retrieve schedules from cache (if exists)...
 			RyanairScheduleResource schedules;
-			if (cache.containsKey(key)) {
-				schedules = cache.get(key);
+			if (this.cache.containsKey(key)) {
+				schedules = this.cache.get(key);
+				// ... or from Ryanair's Schedules API service
 			} else {
 				schedules = this.ryanairService.schedulesAPI(route.get(DEPARTURE), route.get(STOP),
 						departureTime.getYear(), departureTime.getMonthValue());
-				cache.put(key, schedules);
+				this.cache.put(key, schedules);
 			}
 
-			// check over suitable flights
+			// cycle over each daily schedule...
 			Iterator<Day> it = schedules.getDays().iterator();
 			Day day;
+			/*
+			 * ... until provided arrival time is not after the undergoing day
+			 * (useful to save iterations due to the ordered list returned by
+			 * Ryanair's Schedules API service)
+			 */
 			while (it.hasNext() && (day = it.next()).getDay() <= arrivalTime.getDayOfMonth()) {
+				// if we are between departure and arrival day (inclusive)
 				if (day.getDay() >= departureTime.getDayOfMonth()) {
-					// check flights
+					// check each flight of the day
 					for (Flight flight : day.getFlights()) {
 						// get flight departure date-time
-						LocalDateTime flightDeparture = LocalDateTime.of(
-								LocalDate.of(departureTime.getYear(), departureTime.getMonthValue(), day.getDay()),
-								LocalTime.parse(flight.getDepartureTime()));
+						LocalDateTime flightDeparture = InterconnectingFlightsUtils.buildFlightTime(
+								departureTime.getYear(), departureTime.getMonthValue(), day.getDay(),
+								flight.getDepartureTime());
 						// get flight arrival date-time
-						LocalDateTime flightArrival = LocalDateTime.of(
-								LocalDate.of(departureTime.getYear(), departureTime.getMonthValue(), day.getDay()),
-								LocalTime.parse(flight.getArrivalTime()));
-						if (flightDeparture.isAfter(departureTime) && flightArrival.isBefore(arrivalTime)) {
+						LocalDateTime flightArrival = InterconnectingFlightsUtils.buildFlightTime(
+								departureTime.getYear(), departureTime.getMonthValue(), day.getDay(),
+								flight.getArrivalTime());
+						// check data interval (inclusive)
+						if (!flightDeparture.isBefore(departureTime) && !flightArrival.isAfter(arrivalTime)) {
+							// it is a suitable leg; let's create the resource
 							Leg leg = new Leg();
 							leg.setDepartureAirport(route.get(DEPARTURE));
 							leg.setArrivalAirport(route.get(STOP));
-							leg.setDepartureDateTime(
-									Date.from(flightDeparture.atZone(ZoneId.systemDefault()).toInstant()));
-							leg.setArrivalDateTime(Date.from(flightArrival.atZone(ZoneId.systemDefault()).toInstant()));
+							leg.setDepartureDateTime(InterconnectingFlightsUtils.localDateTimeToDate(flightDeparture));
+							leg.setArrivalDateTime(InterconnectingFlightsUtils.localDateTimeToDate(flightArrival));
+							// case of non direct route
 							if (route.size() == 3) {
-								solutions.push(this.createSolution(1, leg));
-								// recursive call
+								/*
+								 * create a partial solution containing the
+								 * first of two needed legs
+								 */
+								this.createAndPushSolution(DirectFlightEnum.NON_DIRECT_FLIGHT, leg);
+								/*
+								 * recursive call over the next part of the
+								 * route. In order to meet the requirements, we
+								 * provide a departure time limit increased of
+								 * two more hours towards to the first leg's
+								 * arrival one
+								 */
 								this.combineSolutions(route.subList(STOP, ARRIVAL + 1), flightArrival.plusHours(2),
-										arrivalTime, cache, solutions);
-								// remove last incomplete solution, if exists
-								if (solutions.peek().getStops() == 1 && solutions.peek().getLegs().size() == 1) {
-									solutions.pop();
+										arrivalTime);
+								/*
+								 * remove last incomplete solution, if exists
+								 * (coming from next case)
+								 */
+								if (this.solutions.peek().getStops() == 1
+										&& this.solutions.peek().getLegs().size() == 1) {
+									this.solutions.pop();
 								}
-							} else if (route.size() == 2 && !solutions.isEmpty() && solutions.peek().getStops() == 1
-									&& solutions.peek().getLegs().size() == 1) {
-								Leg first = solutions.peek().getLegs().iterator().next();
-								solutions.peek().getLegs().add(leg);
-								// create a new instance of Solution
-								solutions.push(this.createSolution(1, first));
+								/*
+								 * case of second leg analysis (case managed
+								 * only during a recursive call). Is the last
+								 * created solution inside the the queue
+								 * partial? It means we must complete it
+								 * creating the second leg
+								 */
+							} else if (route.size() == 2 && !this.solutions.isEmpty()
+									&& this.solutions.peek().getStops() == 1
+									&& this.solutions.peek().getLegs().size() == 1) {
+								/*
+								 * get a copy of the first leg, extracted from
+								 * the last created solution
+								 */
+								Leg first = this.solutions.peek().getLegs().iterator().next();
+								// complete the last created solution
+								this.solutions.peek().getLegs().add(leg);
+								/*
+								 * create a new instance of (partial) Solution,
+								 * making use of the just copied first leg
+								 */
+								this.createAndPushSolution(DirectFlightEnum.NON_DIRECT_FLIGHT, first);
+								/*
+								 * case of direct flight. Create a single leg
+								 * Solution and push it into the solutions queue
+								 */
 							} else {
-								solutions.push(this.createSolution(0, leg));
+								this.createAndPushSolution(DirectFlightEnum.DIRECT_FLIGHT, leg);
 							}
 						}
 					}
 				}
 			}
-
 			// add one month
 			departureTime = departureTime.plusMonths(1);
 		}
 	}
 
-	private SolutionResource createSolution(int stops, Leg leg) {
+	/**
+	 * Creates a {@link SolutionResource} based on number of stops (0 or 1) and
+	 * provided {@link Leg}
+	 * 
+	 * @param direct
+	 *            whether is a direct or non direct flight
+	 * @param firstLeg
+	 *            first (and last if direct) leg
+	 * 
+	 * @return pushed {@link SolutionResource}
+	 */
+	private SolutionResource createAndPushSolution(DirectFlightEnum direct, Leg firstLeg) {
 		SolutionResource solution = new SolutionResource();
-		solution.setStops(stops);
-		Set<Leg> legs = new LinkedHashSet<Leg>(stops + 1);
-		legs.add(leg);
+		// direct or non direct flight?
+		solution.setStops(direct.ordinal());
+		Set<Leg> legs = new LinkedHashSet<Leg>(direct.ordinal() + 1);
+		// in any case, add the first leg
+		legs.add(firstLeg);
 		solution.setLegs(legs);
-		return solution;
+		// push the solution into the queue
+		return this.solutions.push(solution);
+	}
+
+	/**
+	 * Creates a couple of IATA codes representing a direct route, and adds it
+	 * to the final list of suitable routes
+	 * 
+	 * @param departure
+	 *            departure IATA code
+	 * @param arrival
+	 *            arrival IATA code
+	 * @param toRoutesList
+	 *            list for adding just created route
+	 * @return true (as specified by {@link Collection.add})
+	 */
+	private boolean createAndAddRoute(String departure, String arrival, SuitableRoutesList<String> toRoutesList) {
+		// create a two elements long list
+		List<String> zeroStopRoute = new ArrayList<String>(2);
+		// add departure IATA code
+		zeroStopRoute.add(DEPARTURE, departure);
+		// add arrival IATA code
+		zeroStopRoute.add(STOP, arrival);
+		// add the list to the list of suitable ones
+		return toRoutesList.add(zeroStopRoute);
+	}
+
+	/**
+	 * Creates a triple of IATA codes representing a one-stop route, and adds it
+	 * to the final list of suitable routes
+	 * 
+	 * @param departure
+	 *            departure IATA code
+	 * @param stop
+	 *            stop IATA code
+	 * @param arrival
+	 *            arrival IATA code
+	 * @param toRoutesList
+	 *            list for adding just created route
+	 * @return true (as specified by {@link Collection.add})
+	 */
+	private boolean createAndAddRoute(String departure, String stop, String arrival,
+			SuitableRoutesList<String> toRoutesList) {
+		// create a three elements long list
+		List<String> oneStopRoute = new ArrayList<String>(3);
+		// add departure IATA code
+		oneStopRoute.add(DEPARTURE, departure);
+		// add stop IATA code
+		oneStopRoute.add(STOP, stop);
+		// add arrival IATA code
+		oneStopRoute.add(ARRIVAL, arrival);
+		// add the list to the list of suitable ones
+		return toRoutesList.add(oneStopRoute);
 	}
 }
