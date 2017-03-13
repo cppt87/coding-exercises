@@ -35,7 +35,7 @@
 					"type": "integer",
 					"description": "A day of a month"
 				},
-				"fligths": {
+				"flights": {
 					"type": "array",
 					"title": "A list of flights for given day",
 					"items": {
@@ -46,7 +46,7 @@
 			},
 			"required": [
 				"day",
-				"fligths"
+				"flights"
 			]
 		}
 	},

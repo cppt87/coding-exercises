@@ -25,7 +25,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
     "departureTime",
     "arrivalTime"
 })
-public class Fligth {
+public class Flight {
 
     /**
      * A flight number
@@ -139,10 +139,10 @@ public class Fligth {
         if (other == this) {
             return true;
         }
-        if ((other instanceof Fligth) == false) {
+        if ((other instanceof Flight) == false) {
             return false;
         }
-        Fligth rhs = ((Fligth) other);
+        Flight rhs = ((Flight) other);
         return new EqualsBuilder().append(number, rhs.number).append(departureTime, rhs.departureTime).append(arrivalTime, rhs.arrivalTime).append(additionalProperties, rhs.additionalProperties).isEquals();
     }
 

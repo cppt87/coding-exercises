@@ -3,8 +3,6 @@ package com.ryanair.apis.services;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.validation.constraints.Size;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -25,16 +23,14 @@ public class RyanairAPIsService implements IRyanairAPIsService {
 	}
 
 	@Override
-	public RyanairScheduleResource[] schedulesAPI(
-			@Size(max = 3, min = 3, message = "departure must be 3 characters long") String departure,
-			@Size(max = 3, min = 3, message = "arrival must be 3 characters long") String arrival,
-			@Size(max = 4, min = 4, message = "year must be 3 characters long") String year,
-			@Size(max = 1, min = 1, message = "month must be 1 character long") String month) {
+	public RyanairScheduleResource schedulesAPI(String departure, String arrival, int year, int month) {
 		Map<String, String> params = new HashMap<String, String>(4);
 		params.put("departure", departure);
 		params.put("arrival", arrival);
-		params.put("year", year);
-		params.put("month", month);
-		return restTemplate.getForObject(SCHEDULES_ENDPOINT, RyanairScheduleResource[].class, params);
+		params.put("year", String.valueOf(year));
+		params.put("month", String.valueOf(month));
+		
+		// CHECK RESPONSE BEFORE DESERIALIZE!!!
+		return restTemplate.getForObject(SCHEDULES_ENDPOINT, RyanairScheduleResource.class, params);
 	}
 }

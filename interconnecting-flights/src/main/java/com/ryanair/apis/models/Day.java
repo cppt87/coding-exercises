@@ -25,7 +25,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
     "day",
-    "fligths"
+    "flights"
 })
 public class Day {
 
@@ -44,9 +44,9 @@ public class Day {
      * (Required)
      * 
      */
-    @JsonProperty("fligths")
+    @JsonProperty("flights")
     @JsonDeserialize(as = java.util.LinkedHashSet.class)
-    private Set<Fligth> fligths = new LinkedHashSet<Fligth>();
+    private Set<Flight> flights = new LinkedHashSet<Flight>();
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
@@ -77,9 +77,9 @@ public class Day {
      * (Required)
      * 
      */
-    @JsonProperty("fligths")
-    public Set<Fligth> getFligths() {
-        return fligths;
+    @JsonProperty("flights")
+    public Set<Flight> getFlights() {
+        return flights;
     }
 
     /**
@@ -89,9 +89,9 @@ public class Day {
      * (Required)
      * 
      */
-    @JsonProperty("fligths")
-    public void setFligths(Set<Fligth> fligths) {
-        this.fligths = fligths;
+    @JsonProperty("flights")
+    public void setFlights(Set<Flight> flights) {
+        this.flights = flights;
     }
 
     @Override
@@ -111,7 +111,7 @@ public class Day {
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(day).append(fligths).append(additionalProperties).toHashCode();
+        return new HashCodeBuilder().append(day).append(flights).append(additionalProperties).toHashCode();
     }
 
     @Override
@@ -123,7 +123,7 @@ public class Day {
             return false;
         }
         Day rhs = ((Day) other);
-        return new EqualsBuilder().append(day, rhs.day).append(fligths, rhs.fligths).append(additionalProperties, rhs.additionalProperties).isEquals();
+        return new EqualsBuilder().append(day, rhs.day).append(flights, rhs.flights).append(additionalProperties, rhs.additionalProperties).isEquals();
     }
 
 }

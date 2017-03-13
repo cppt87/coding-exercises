@@ -13,5 +13,5 @@ public interface IRyanairAPIsService {
 	 * returns a list of available flights for a given departure airport IATA
 	 * code, an arrival airport IATA code, a year and a month
 	 */
-	RyanairScheduleResource[] schedulesAPI(String departure, String arrival, String year, String month);
+	RyanairScheduleResource schedulesAPI(String departure, String arrival, int year, int month);
 }
