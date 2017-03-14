@@ -95,7 +95,9 @@ public class InterconnectingFlightsController {
 		 * adjacency list: [key=STOP -> value=FROM || key=STOP -> value=TO].
 		 */
 		Properties graph = new Properties();
-
+		// transform IATA codes toUppercase()
+		departure = departure.toUpperCase();
+		arrival = arrival.toUpperCase();
 		// for each route coming from Ryanair's Routes API service
 		for (RyanairRouteResource route : routes) {
 			// case of direct flight: same departure and arrival

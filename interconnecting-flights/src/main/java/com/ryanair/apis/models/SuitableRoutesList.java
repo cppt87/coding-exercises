@@ -12,6 +12,6 @@ public class SuitableRoutesList<T> extends ArrayList<List<T>> implements Compara
 
 	@Override
 	public int compare(List<T> o1, List<T> o2) {
-		return o1.size() - o2.size();
+		return o2.size() - o1.size();
 	}
 }

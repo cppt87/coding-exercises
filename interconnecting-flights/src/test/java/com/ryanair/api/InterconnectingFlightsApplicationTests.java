@@ -1,16 +1,12 @@
 package com.ryanair.api;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
 
-import java.io.IOException;
 import java.nio.charset.Charset;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -18,85 +14,89 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.mock.http.MockHttpOutputMessage;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import com.ryanair.apis.InterconnectingFlightsApplication;
-import com.ryanair.apis.services.IRyanairAPIsService;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = InterconnectingFlightsApplication.class)
 @WebAppConfiguration
 public class InterconnectingFlightsApplicationTests {
+	private static final String API_ENDPOINT = "/interconnections?departure=%s&arrival=%s&departureDateTime=%s&arrivalDateTime=%s";
 
 	private MediaType contentType = new MediaType(MediaType.APPLICATION_JSON.getType(),
 			MediaType.APPLICATION_JSON.getSubtype(), Charset.forName("utf8"));
 
-	@Autowired
-	private IRyanairAPIsService service;
-
 	private MockMvc mockMvc;
+
+	private LocalDateTime date;
 
 	@Autowired
 	private WebApplicationContext webApplicationContext;
 
 	@Before
 	public void setup() throws Exception {
-		this.mockMvc = webAppContextSetup(webApplicationContext).build();
+		this.mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+		this.date = LocalDateTime.now();
 	}
-	
+
 	@Test
-    public void userNotFound() throws Exception {
-        mockMvc.perform(post("/george/bookmarks/")
-                .content(this.json(new Bookmark()))
-                .contentType(contentType))
-                .andExpect(status().isNotFound());
-    }
+	public void testCaseInsensitive() throws Exception {
+		mockMvc.perform(get(String.format(API_ENDPOINT, "BgY", "pMo",
+				date.plusHours(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")),
+				date.plusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"))))).andExpect(status().isOk())
+				.andExpect(content().contentType(contentType));
+	}
 
-    @Test
-    public void readSingleBookmark() throws Exception {
-        mockMvc.perform(get("/" + userName + "/bookmarks/"
-                + this.bookmarkList.get(0).getId()))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(contentType))
-                .andExpect(jsonPath("$.id", is(this.bookmarkList.get(0).getId().intValue())))
-                .andExpect(jsonPath("$.uri", is("http://bookmark.com/1/" + userName)))
-                .andExpect(jsonPath("$.description", is("A description")));
-    }
+	@Test
+	public void testPatternIATACode() throws Exception {
+		mockMvc.perform(get(String.format(API_ENDPOINT, "BG", "PM0",
+				date.plusHours(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")),
+				date.plusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")))))
+				.andExpect(status().isBadRequest()).andExpect(content().contentType(contentType));
+	}
 
-    @Test
-    public void readBookmarks() throws Exception {
-        mockMvc.perform(get("/" + userName + "/bookmarks"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(contentType))
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].id", is(this.bookmarkList.get(0).getId().intValue())))
-                .andExpect(jsonPath("$[0].uri", is("http://bookmark.com/1/" + userName)))
-                .andExpect(jsonPath("$[0].description", is("A description")))
-                .andExpect(jsonPath("$[1].id", is(this.bookmarkList.get(1).getId().intValue())))
-                .andExpect(jsonPath("$[1].uri", is("http://bookmark.com/2/" + userName)))
-                .andExpect(jsonPath("$[1].description", is("A description")));
-    }
+	@Test
+	public void testSameIATACodes() throws Exception {
+		mockMvc.perform(get(String.format(API_ENDPOINT, "PMO", "PMO",
+				date.plusHours(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")),
+				date.plusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")))))
+				.andExpect(status().isBadRequest()).andExpect(content().contentType(contentType));
+	}
 
-    @Test
-    public void createBookmark() throws Exception {
-        String bookmarkJson = json(new Bookmark(
-                this.account, "http://spring.io", "a bookmark to the best resource for Spring news and information"));
+	@Test
+	public void testSameDate() throws Exception {
+		mockMvc.perform(get(String.format(API_ENDPOINT, "BGY", "PMO",
+				date.plusHours(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")),
+				date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"))))).andExpect(status().isBadRequest())
+				.andExpect(content().contentType(contentType));
+	}
 
-        this.mockMvc.perform(post("/" + userName + "/bookmarks")
-                .contentType(contentType)
-                .content(bookmarkJson))
-                .andExpect(status().isCreated());
-    }
+	@Test
+	public void testBadDateFormat() throws Exception {
+		String url = String.format(API_ENDPOINT, "BGY", "PMO", date.plusHours(1).format(DateTimeFormatter.ISO_DATE),
+				date.plusDays(1).format(DateTimeFormatter.ISO_DATE));
+		System.out.println("URL: " + url);
+		mockMvc.perform(get(url)).andExpect(status().isBadRequest()).andExpect(content().contentType(contentType));
+	}
 
-    protected String json(Object o) throws IOException {
-        MockHttpOutputMessage mockHttpOutputMessage = new MockHttpOutputMessage();
-        this.mappingJackson2HttpMessageConverter.write(
-                o, MediaType.APPLICATION_JSON, mockHttpOutputMessage);
-        return mockHttpOutputMessage.getBodyAsString();
-    }
+	@Test
+	public void testDeltaTimeTooLarge() throws Exception {
+		mockMvc.perform(get(String.format(API_ENDPOINT, "BGY", "PMO",
+				date.plusHours(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")),
+				date.plusDays(7).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")))))
+				.andExpect(status().isRequestedRangeNotSatisfiable()).andExpect(content().contentType(contentType));
+	}
 
+	@Test
+	public void testDeltaTimeTooSmall() throws Exception {
+		mockMvc.perform(get(String.format(API_ENDPOINT, "BGY", "PMO",
+				date.plusHours(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")),
+				date.plusHours(2).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")))))
+				.andExpect(status().isNotFound()).andExpect(content().contentType(contentType));
+	}
 }

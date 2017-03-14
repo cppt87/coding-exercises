@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -16,11 +18,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ryanair.apis.exceptions.ServiceUnavailableException;
 import com.ryanair.apis.models.RyanairRouteResource;
 import com.ryanair.apis.models.RyanairScheduleResource;
+import com.ryanair.apis.utils.InterconnectingFlightsUtils;
 
 @Service("ryanairService")
 public class RyanairAPIsService implements IRyanairAPIsService {
-	private static final String ROUTES_ENDPOINT = "https://api.ryanair.com/core/3/routes/";
-	private static final String SCHEDULES_ENDPOINT = "https://api.ryanair.com/timetable/3/schedules/{departure}/{arrival}/years/{year}/months/{month}";
+	private static final Logger LOGGER = LoggerFactory.getLogger(RyanairAPIsService.class);
+	
 	@Autowired
 	private RestTemplate restTemplate;
 	@Autowired
@@ -29,7 +32,8 @@ public class RyanairAPIsService implements IRyanairAPIsService {
 	@Override
 	public RyanairRouteResource[] routesAPI() throws Exception {
 		try {
-			String json = restTemplate.getForObject(ROUTES_ENDPOINT, String.class);
+			String json = restTemplate.getForObject(InterconnectingFlightsUtils.ROUTES_ENDPOINT, String.class);
+			LOGGER.debug("Ryanair Routes API results:\n{}", json);
 			// try to convert JSON string to RyanairRouteResource[]
 			return this.mapper.readValue(json, new TypeReference<RyanairRouteResource[]>() {
 			});
@@ -48,14 +52,16 @@ public class RyanairAPIsService implements IRyanairAPIsService {
 		params.put("year", String.valueOf(year));
 		params.put("month", String.valueOf(month));
 		try {
-			ResponseEntity<String> entity = restTemplate.exchange(SCHEDULES_ENDPOINT, HttpMethod.GET, null,
+			ResponseEntity<String> entity = restTemplate.exchange(InterconnectingFlightsUtils.SCHEDULES_ENDPOINT, HttpMethod.GET, null,
 					String.class, params);
-			switch (entity.getStatusCodeValue()) {
-			case 200:
-			case 201:
+			LOGGER.info("Ryanair Schedules API result code {} with parameters {}", entity.getStatusCodeValue(), params);
+			switch (entity.getStatusCode()) {
+			case OK:
+			case CREATED:
+				LOGGER.debug("Ryanair Schedules API result:\n{}", entity.getBody());
 				return this.mapper.readValue(entity.getBody(), new TypeReference<RyanairScheduleResource>() {
 				});
-			case 404:
+			case NOT_FOUND:
 				RyanairScheduleResource emptyResource = new RyanairScheduleResource();
 				emptyResource.setMonth(month);
 				emptyResource.setDays(new LinkedHashSet<>(0));
@@ -71,11 +77,9 @@ public class RyanairAPIsService implements IRyanairAPIsService {
 				emptyResource.setDays(new LinkedHashSet<>(0));
 				return emptyResource;
 			default:
-				e.printStackTrace();
 				throw new ServiceUnavailableException("Ryanair Schedules API", e);
 			}			
 		} catch (Exception e) {
-			e.printStackTrace();
 			throw new ServiceUnavailableException("Ryanair Schedules API", e);
 		}
 	}

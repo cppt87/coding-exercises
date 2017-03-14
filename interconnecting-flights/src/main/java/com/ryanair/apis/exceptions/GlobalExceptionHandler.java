@@ -6,33 +6,47 @@ import java.util.Set;
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import com.ryanair.apis.models.Error;
 import com.ryanair.apis.models.ErrorResource;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+	private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
 	@ExceptionHandler(value = { ConstraintViolationException.class })
 	@ResponseBody
 	public ResponseEntity<ErrorResource> handleBadRequestException(ConstraintViolationException e) {
+		LOGGER.error("Exception caught: ", e);
+		return new ResponseEntity<ErrorResource>(this.errorBuilder(e), HttpStatus.BAD_REQUEST);
+	}
+
+	@ExceptionHandler(value = { MethodArgumentTypeMismatchException.class })
+	@ResponseBody
+	public ResponseEntity<ErrorResource> handleBadRequestException(MethodArgumentTypeMismatchException e) {
+		LOGGER.error("Exception caught: ", e);
 		return new ResponseEntity<ErrorResource>(this.errorBuilder(e), HttpStatus.BAD_REQUEST);
 	}
 
 	@ExceptionHandler(value = { BadRequestException.class })
 	@ResponseBody
 	public ResponseEntity<ErrorResource> handleBadRequestException(BadRequestException e) {
+		LOGGER.error("Exception caught: ", e);
 		return new ResponseEntity<ErrorResource>(this.errorBuilder(e), HttpStatus.BAD_REQUEST);
 	}
 
 	@ExceptionHandler(value = { NotFoundException.class })
 	@ResponseBody
 	public ResponseEntity<ErrorResource> handleNotFoundException(NotFoundException e) {
+		LOGGER.error("Exception caught: ", e);
 		return new ResponseEntity<ErrorResource>(this.errorBuilder(e), HttpStatus.NOT_FOUND);
 	}
 
@@ -40,18 +54,21 @@ public class GlobalExceptionHandler {
 	@ResponseBody
 	public ResponseEntity<ErrorResource> handleRequestRangeNotSatisfiableException(
 			RequestRangeNotSatisfiableException e) {
+		LOGGER.error("Exception caught: ", e);
 		return new ResponseEntity<ErrorResource>(this.errorBuilder(e), HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE);
 	}
 
 	@ExceptionHandler(value = { ServiceUnavailableException.class })
 	@ResponseBody
 	public ResponseEntity<ErrorResource> handleServiceUnavailableException(ServiceUnavailableException e) {
+		LOGGER.error("Exception caught: ", e);
 		return new ResponseEntity<ErrorResource>(this.errorBuilder(e), HttpStatus.SERVICE_UNAVAILABLE);
 	}
 
 	@ExceptionHandler(value = { Exception.class })
 	@ResponseBody
 	public ResponseEntity<ErrorResource> handleInternalServerErrorException(Exception e) {
+		LOGGER.error("Exception caught: ", e);
 		return new ResponseEntity<ErrorResource>(this.errorBuilder(e), HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
@@ -76,8 +93,10 @@ public class GlobalExceptionHandler {
 			error = new Error();
 			error.setTitle(e.getClass().getName());
 			error.setDetail(e.getMessage());
-			
+
 			if (e instanceof BadRequestException)
+				error.setStatus(HttpStatus.BAD_REQUEST.toString());
+			else if (e instanceof MethodArgumentTypeMismatchException)
 				error.setStatus(HttpStatus.BAD_REQUEST.toString());
 			else if (e instanceof NotFoundException)
 				error.setStatus(HttpStatus.NOT_FOUND.toString());

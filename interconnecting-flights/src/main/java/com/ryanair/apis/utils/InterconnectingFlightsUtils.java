@@ -12,7 +12,13 @@ public class InterconnectingFlightsUtils {
 	 * REST URIs definition
 	 */
 	public static final String GET_INTERCONNECTIONS = "/interconnections";
-
+	
+	/*
+	 * External services URIs definition
+	 */
+	public static final String ROUTES_ENDPOINT = "https://api.ryanair.com/core/3/routes/";
+	public static final String SCHEDULES_ENDPOINT = "https://api.ryanair.com/timetable/3/schedules/{departure}/{arrival}/years/{year}/months/{month}";
+	
 	/*
 	 * Global constants definition
 	 */
