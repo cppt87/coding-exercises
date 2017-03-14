@@ -64,7 +64,6 @@ public class RyanairAPIsService implements IRyanairAPIsService {
 				throw new ServiceUnavailableException("Ryanair Schedules API", new Throwable(entity.getBody()));
 			}
 		} catch (HttpClientErrorException e) {
-			e.printStackTrace();
 			switch (e.getStatusCode()) {
 			case NOT_FOUND:
 				RyanairScheduleResource emptyResource = new RyanairScheduleResource();
@@ -72,6 +71,7 @@ public class RyanairAPIsService implements IRyanairAPIsService {
 				emptyResource.setDays(new LinkedHashSet<>(0));
 				return emptyResource;
 			default:
+				e.printStackTrace();
 				throw new ServiceUnavailableException("Ryanair Schedules API", e);
 			}			
 		} catch (Exception e) {
