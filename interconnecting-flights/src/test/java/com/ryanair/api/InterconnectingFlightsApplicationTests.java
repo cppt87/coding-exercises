@@ -78,10 +78,8 @@ public class InterconnectingFlightsApplicationTests {
 
 	@Test
 	public void testBadDateFormat() throws Exception {
-		String url = String.format(API_ENDPOINT, "BGY", "PMO", date.plusHours(1).format(DateTimeFormatter.ISO_DATE),
-				date.plusDays(1).format(DateTimeFormatter.ISO_DATE));
-		System.out.println("URL: " + url);
-		mockMvc.perform(get(url)).andExpect(status().isBadRequest()).andExpect(content().contentType(contentType));
+		mockMvc.perform(get(String.format(API_ENDPOINT, "BGY", "PMO", date.plusHours(1).format(DateTimeFormatter.ISO_DATE),
+				date.plusDays(1).format(DateTimeFormatter.ISO_DATE)))).andExpect(status().isBadRequest()).andExpect(content().contentType(contentType));
 	}
 
 	@Test
