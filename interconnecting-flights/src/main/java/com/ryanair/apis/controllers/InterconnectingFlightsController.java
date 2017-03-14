@@ -4,13 +4,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.Stack;
 
 import javax.validation.constraints.Future;
 import javax.validation.constraints.Pattern;
@@ -27,10 +27,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ryanair.apis.models.Day;
 import com.ryanair.apis.models.Flight;
 import com.ryanair.apis.models.Leg;
-import com.ryanair.apis.models.SuitableRoutesList;
 import com.ryanair.apis.models.RyanairRouteResource;
 import com.ryanair.apis.models.RyanairScheduleResource;
 import com.ryanair.apis.models.SolutionResource;
+import com.ryanair.apis.models.SuitableRoutesList;
 import com.ryanair.apis.services.IRyanairAPIsService;
 import com.ryanair.apis.utils.DirectFlightEnum;
 import com.ryanair.apis.utils.InterconnectingFlightsUtils;
@@ -50,17 +50,17 @@ public class InterconnectingFlightsController {
 	private Map<String, RyanairScheduleResource> cache;
 	@Autowired
 	// LIFO queue of solutions
-	private Stack<SolutionResource> solutions;
+	private Deque<SolutionResource> solutions;
+	@Autowired
+	// retrieve the routes list from Ryanair's Routes API service
+	private RyanairRouteResource[] routes;
 
 	@GetMapping(InterconnectingFlightsUtils.GET_INTERCONNECTIONS)
-	public ResponseEntity<Stack<SolutionResource>> routes(
+	public ResponseEntity<Deque<SolutionResource>> routes(
 			@Pattern(regexp = InterconnectingFlightsUtils.IATA_REGEXP, message = InterconnectingFlightsUtils.IATA_DEP_ERROR_VALIDATION_MSG) @RequestParam(value = "departure", required = true) String departure,
 			@Pattern(regexp = InterconnectingFlightsUtils.IATA_REGEXP, message = InterconnectingFlightsUtils.IATA_ARR_ERROR_VALIDATION_MSG) @RequestParam(value = "arrival", required = true) String arrival,
 			@RequestParam(value = "departureDateTime", required = true) @Future(message = InterconnectingFlightsUtils.DATE_DEP_ERROR_VALIDATION_MSG) @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") Date departureDateTime,
 			@RequestParam(value = "arrivalDateTime", required = true) @Future(message = InterconnectingFlightsUtils.DATE_ARR_ERROR_VALIDATION_MSG) @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") Date arrivalDateTime) {
-
-		// retrieve the routes list from Ryanair's Routes API service
-		RyanairRouteResource[] routes = this.ryanairService.routesAPI();
 		/*
 		 * list of 0 and/or 1 stop routes. Later we will iterate over a useful
 		 * list of this type: [["DUB", "WRO"], ["DUB", "STN", "WRO"]]. List is
@@ -119,16 +119,16 @@ public class InterconnectingFlightsController {
 			this.combineSolutions(foundRoute, departureLocalDateTime, arrivalLocalDateTime);
 		}
 
-		return this.solutions.isEmpty() ? new ResponseEntity<Stack<SolutionResource>>(HttpStatus.NOT_FOUND)
-				: new ResponseEntity<Stack<SolutionResource>>(this.solutions, HttpStatus.OK);
+		return this.solutions.isEmpty() ? new ResponseEntity<Deque<SolutionResource>>(HttpStatus.NOT_FOUND)
+				: new ResponseEntity<Deque<SolutionResource>>(this.solutions, HttpStatus.OK);
 	}
 
 	/**
 	 * Creates the list of 0 and/or 1 stop solutions, managing a certain route.
 	 * In case of 1 stop solution (a list of three IATA codes), it behaves
-	 * recursively: for each suitable {@link Leg} based on first two codes of
-	 * the route, it applies itself over the second an the third elements of the
-	 * list (namely the second {@link Leg})
+	 * recursively: for each suitable {@link Leg} based on first two IATA codes,
+	 * it applies itself over the second an the third element of the list
+	 * (namely the second {@link Leg})
 	 * 
 	 * @param route
 	 *            list of IATA codes. Two elements if direct, three if not
@@ -158,18 +158,20 @@ public class InterconnectingFlightsController {
 			}
 
 			// cycle over each daily schedule...
-			Iterator<Day> it = schedules.getDays().iterator();
+			Iterator<Day> dayIt = schedules.getDays().iterator();
 			Day day;
 			/*
 			 * ... until provided arrival time is not after the undergoing day
 			 * (useful to save iterations due to the ordered list returned by
 			 * Ryanair's Schedules API service)
 			 */
-			while (it.hasNext() && (day = it.next()).getDay() <= arrivalTime.getDayOfMonth()) {
+			while (dayIt.hasNext() && (day = dayIt.next()).getDay() <= arrivalTime.getDayOfMonth()) {
 				// if we are between departure and arrival day (inclusive)
 				if (day.getDay() >= departureTime.getDayOfMonth()) {
 					// check each flight of the day
-					for (Flight flight : day.getFlights()) {
+					Iterator<Flight> flightIt = day.getFlights().iterator();
+					while (flightIt.hasNext()) {
+						Flight flight = flightIt.next();
 						// get flight departure date-time
 						LocalDateTime flightDeparture = InterconnectingFlightsUtils.buildFlightTime(
 								departureTime.getYear(), departureTime.getMonthValue(), day.getDay(),
@@ -228,10 +230,12 @@ public class InterconnectingFlightsController {
 								// complete the last created solution
 								this.solutions.peek().getLegs().add(leg);
 								/*
-								 * create a new instance of (partial) Solution,
-								 * making use of the just copied first leg
+								 * if there are more flights to check, create a
+								 * new instance of (partial) Solution, making
+								 * use of the just copied first leg
 								 */
-								this.createAndPushSolution(DirectFlightEnum.NON_DIRECT_FLIGHT, first);
+								if (flightIt.hasNext() || dayIt.hasNext())
+									this.createAndPushSolution(DirectFlightEnum.NON_DIRECT_FLIGHT, first);
 								/*
 								 * case of direct flight. Create a single leg
 								 * Solution and push it into the solutions queue
@@ -256,10 +260,8 @@ public class InterconnectingFlightsController {
 	 *            whether is a direct or non direct flight
 	 * @param firstLeg
 	 *            first (and last if direct) leg
-	 * 
-	 * @return pushed {@link SolutionResource}
 	 */
-	private SolutionResource createAndPushSolution(DirectFlightEnum direct, Leg firstLeg) {
+	private void createAndPushSolution(DirectFlightEnum direct, Leg firstLeg) {
 		SolutionResource solution = new SolutionResource();
 		// direct or non direct flight?
 		solution.setStops(direct.ordinal());
@@ -268,7 +270,7 @@ public class InterconnectingFlightsController {
 		legs.add(firstLeg);
 		solution.setLegs(legs);
 		// push the solution into the queue
-		return this.solutions.push(solution);
+		this.solutions.push(solution);
 	}
 
 	/**

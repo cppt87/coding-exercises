@@ -29,7 +29,7 @@ public class RyanairAPIsService implements IRyanairAPIsService {
 		params.put("arrival", arrival);
 		params.put("year", String.valueOf(year));
 		params.put("month", String.valueOf(month));
-		
+
 		// CHECK RESPONSE BEFORE DESERIALIZE!!!
 		return restTemplate.getForObject(SCHEDULES_ENDPOINT, RyanairScheduleResource.class, params);
 	}

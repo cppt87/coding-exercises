@@ -1,8 +1,9 @@
 package com.ryanair.apis;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Stack;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -10,9 +11,12 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.context.annotation.RequestScope;
 
+import com.ryanair.apis.models.RyanairRouteResource;
 import com.ryanair.apis.models.RyanairScheduleResource;
 import com.ryanair.apis.models.SolutionResource;
+import com.ryanair.apis.services.IRyanairAPIsService;
 
 @SpringBootApplication
 public class InterconnectingFlightsApplication {
@@ -37,7 +41,13 @@ public class InterconnectingFlightsApplication {
 	}
 
 	@Bean
-	public Stack<SolutionResource> solutions() {
-		return new Stack<SolutionResource>();
+	RyanairRouteResource[] routes(IRyanairAPIsService ryanairService) {
+		return ryanairService.routesAPI();
+	}
+
+	@Bean
+	@RequestScope
+	public Deque<SolutionResource> solutions() {
+		return new ArrayDeque<SolutionResource>();
 	}
 }
