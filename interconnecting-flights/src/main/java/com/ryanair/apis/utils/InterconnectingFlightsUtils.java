@@ -22,6 +22,7 @@ public class InterconnectingFlightsUtils {
 	public static final String IATA_ARR_ERROR_VALIDATION_MSG = "Provided arrival [%s] is not a valid IATA airport code. It must be 3 characters long";
 	public static final String DATE_DEP_ERROR_VALIDATION_MSG = "Departure date must be in the future";
 	public static final String DATE_ARR_ERROR_VALIDATION_MSG = "Arrival date must be in the future";
+	public static final int MAX_DAYS_RANGE = 5;
 
 	/*
 	 * Utility methods definition

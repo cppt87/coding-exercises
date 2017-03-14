@@ -4,16 +4,19 @@ package com.ryanair.apis.models;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
+
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.lang.builder.ToStringBuilder;
 
 
 /**
@@ -51,6 +54,7 @@ public class Leg {
      * 
      */
     @JsonProperty("departureDateTime")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     @JsonPropertyDescription("Any type of date. ISO 8601 datetime")
     private Date departureDateTime;
     /**
@@ -59,6 +63,7 @@ public class Leg {
      * 
      */
     @JsonProperty("arrivalDateTime")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     @JsonPropertyDescription("Any type of date. ISO 8601 datetime")
     private Date arrivalDateTime;
     @JsonIgnore

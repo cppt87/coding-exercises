@@ -1,6 +1,7 @@
 package com.ryanair.apis.controllers;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -24,6 +25,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ryanair.apis.exceptions.BadRequestException;
+import com.ryanair.apis.exceptions.NotFoundException;
+import com.ryanair.apis.exceptions.RequestRangeNotSatisfiableException;
 import com.ryanair.apis.models.Day;
 import com.ryanair.apis.models.Flight;
 import com.ryanair.apis.models.Leg;
@@ -60,7 +64,26 @@ public class InterconnectingFlightsController {
 			@Pattern(regexp = InterconnectingFlightsUtils.IATA_REGEXP, message = InterconnectingFlightsUtils.IATA_DEP_ERROR_VALIDATION_MSG) @RequestParam(value = "departure", required = true) String departure,
 			@Pattern(regexp = InterconnectingFlightsUtils.IATA_REGEXP, message = InterconnectingFlightsUtils.IATA_ARR_ERROR_VALIDATION_MSG) @RequestParam(value = "arrival", required = true) String arrival,
 			@RequestParam(value = "departureDateTime", required = true) @Future(message = InterconnectingFlightsUtils.DATE_DEP_ERROR_VALIDATION_MSG) @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") Date departureDateTime,
-			@RequestParam(value = "arrivalDateTime", required = true) @Future(message = InterconnectingFlightsUtils.DATE_ARR_ERROR_VALIDATION_MSG) @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") Date arrivalDateTime) {
+			@RequestParam(value = "arrivalDateTime", required = true) @Future(message = InterconnectingFlightsUtils.DATE_ARR_ERROR_VALIDATION_MSG) @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") Date arrivalDateTime)
+			throws Exception {
+
+		// verify that arrivalDateTime > departureDateTime
+		if (!arrivalDateTime.after(departureDateTime))
+			throw new BadRequestException("Arrival date must be after the departure date");
+
+		// verify that departure != arrival
+		if (departure.equalsIgnoreCase(arrival))
+			throw new BadRequestException("Departure IATA code and arrival IATA code must be different");
+
+		// convert Date(s) to LocalDate(s)
+		LocalDateTime departureLocalDateTime = InterconnectingFlightsUtils.dateToLocalDateTime(departureDateTime);
+		LocalDateTime arrivalLocalDateTime = InterconnectingFlightsUtils.dateToLocalDateTime(arrivalDateTime);
+
+		// verify that provided range is less than
+		// InterconnectingFlightsUtils.MAX_DAYS_RANGE
+		long days = departureLocalDateTime.until(arrivalLocalDateTime, ChronoUnit.DAYS);
+		if (days > InterconnectingFlightsUtils.MAX_DAYS_RANGE)
+			throw new RequestRangeNotSatisfiableException(String.format("%d days", days));
 		/*
 		 * list of 0 and/or 1 stop routes. Later we will iterate over a useful
 		 * list of this type: [["DUB", "WRO"], ["DUB", "STN", "WRO"]]. List is
@@ -110,17 +133,16 @@ public class InterconnectingFlightsController {
 					graph.put(route.getAirportFrom(), arrival);
 			}
 		}
-		// convert Date(s) to LocalDate(s)
-		LocalDateTime departureLocalDateTime = InterconnectingFlightsUtils.dateToLocalDateTime(departureDateTime);
-		LocalDateTime arrivalLocalDateTime = InterconnectingFlightsUtils.dateToLocalDateTime(arrivalDateTime);
 		// for each route
 		for (List<String> foundRoute : foundRoutes) {
 			// calculate solutions
 			this.combineSolutions(foundRoute, departureLocalDateTime, arrivalLocalDateTime);
 		}
 
-		return this.solutions.isEmpty() ? new ResponseEntity<Deque<SolutionResource>>(HttpStatus.NOT_FOUND)
-				: new ResponseEntity<Deque<SolutionResource>>(this.solutions, HttpStatus.OK);
+		if (this.solutions.isEmpty())
+			throw new NotFoundException();
+		else
+			return new ResponseEntity<Deque<SolutionResource>>(this.solutions, HttpStatus.OK);
 	}
 
 	/**
@@ -137,7 +159,8 @@ public class InterconnectingFlightsController {
 	 * @param arrivalTime
 	 *            the arrival input time
 	 */
-	private void combineSolutions(List<String> route, LocalDateTime departureTime, LocalDateTime arrivalTime) {
+	private void combineSolutions(List<String> route, LocalDateTime departureTime, LocalDateTime arrivalTime)
+			throws Exception {
 		// cycle over input temporal range
 		while (!departureTime.isAfter(arrivalTime)) {
 			/*

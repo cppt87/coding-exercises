@@ -36,4 +36,75 @@ public class GlobalExceptionHandler {
 		resource.setErrors(errorList);
 		return new ResponseEntity<ErrorResource>(resource, HttpStatus.BAD_REQUEST);
 	}
+
+	@ExceptionHandler(value = { BadRequestException.class })
+	@ResponseBody
+	public ResponseEntity<ErrorResource> handleBadRequestException(BadRequestException e) {
+		ErrorResource resource = new ErrorResource();
+		Set<Error> errorList = new LinkedHashSet<Error>(1);
+		Error error = new Error();
+		error.setStatus(HttpStatus.BAD_REQUEST.toString());
+		error.setTitle(e.getClass().getName());
+		error.setDetail(e.getMessage());
+		errorList.add(error);
+		resource.setErrors(errorList);
+		return new ResponseEntity<ErrorResource>(resource, HttpStatus.BAD_REQUEST);
+	}
+	
+	@ExceptionHandler(value = { NotFoundException.class })
+	@ResponseBody
+	public ResponseEntity<ErrorResource> handleNotFoundException(NotFoundException e) {
+		ErrorResource resource = new ErrorResource();
+		Set<Error> errorList = new LinkedHashSet<Error>(1);
+		Error error = new Error();
+		error.setStatus(HttpStatus.NOT_FOUND.toString());
+		error.setTitle(e.getClass().getName());
+		error.setDetail(e.getMessage());
+		errorList.add(error);
+		resource.setErrors(errorList);
+		return new ResponseEntity<ErrorResource>(resource, HttpStatus.NOT_FOUND);
+	}
+
+	@ExceptionHandler(value = { RequestRangeNotSatisfiableException.class })
+	@ResponseBody
+	public ResponseEntity<ErrorResource> handleRequestRangeNotSatisfiableException(
+			RequestRangeNotSatisfiableException e) {
+		ErrorResource resource = new ErrorResource();
+		Set<Error> errorList = new LinkedHashSet<Error>(1);
+		Error error = new Error();
+		error.setStatus(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE.toString());
+		error.setTitle(e.getClass().getName());
+		error.setDetail(e.getMessage());
+		errorList.add(error);
+		resource.setErrors(errorList);
+		return new ResponseEntity<ErrorResource>(resource, HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE);
+	}
+
+	@ExceptionHandler(value = { ServiceUnavailableException.class })
+	@ResponseBody
+	public ResponseEntity<ErrorResource> handleServiceUnavailableException(ServiceUnavailableException e) {
+		ErrorResource resource = new ErrorResource();
+		Set<Error> errorList = new LinkedHashSet<Error>(1);
+		Error error = new Error();
+		error.setStatus(HttpStatus.SERVICE_UNAVAILABLE.toString());
+		error.setTitle(e.getClass().getName());
+		error.setDetail(e.getMessage());
+		errorList.add(error);
+		resource.setErrors(errorList);
+		return new ResponseEntity<ErrorResource>(resource, HttpStatus.SERVICE_UNAVAILABLE);
+	}
+	
+	@ExceptionHandler(value = { Exception.class })
+	@ResponseBody
+	public ResponseEntity<ErrorResource> handleInternalServerErrorException(Exception e) {
+		ErrorResource resource = new ErrorResource();
+		Set<Error> errorList = new LinkedHashSet<Error>(1);
+		Error error = new Error();
+		error.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.toString());
+		error.setTitle(e.getClass().getName());
+		error.setDetail(e.getMessage());
+		errorList.add(error);
+		resource.setErrors(errorList);
+		return new ResponseEntity<ErrorResource>(resource, HttpStatus.INTERNAL_SERVER_ERROR);
+	}
 }
