@@ -10,7 +10,11 @@ public class NotFoundException extends Exception {
 	public NotFoundException() {
 		super("Resource not found");
 	}
-
+	
+	public NotFoundException(String msg) {
+		super(msg);
+	}
+	
 	public NotFoundException(Throwable cause) {
 		super(cause);
 	}

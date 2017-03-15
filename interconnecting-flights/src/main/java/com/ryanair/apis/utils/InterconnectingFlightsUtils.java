@@ -1,8 +1,6 @@
 package com.ryanair.apis.utils;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Date;
 
@@ -55,24 +53,5 @@ public class InterconnectingFlightsUtils {
 	 */
 	public static Date localDateTimeToDate(LocalDateTime localDateTime) {
 		return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
-	}
-
-	/**
-	 * Creates a {@link LocalDateTime} object representing a flight time
-	 * schedule
-	 * 
-	 * @param year
-	 *            the year to represent, from MIN_YEAR to MAX_YEAR, not null
-	 * @param monthValue
-	 *            the month-of-year to represent, from 1 (January) to 12
-	 *            (December), not null
-	 * @param dayMonth
-	 *            the day-of-month to represent, from 1 to 31, not null
-	 * @param time
-	 *            the text-based time to parse such as "10:15:30", not null
-	 * @return the assembled {@link LocalDateTime} object
-	 */
-	public static LocalDateTime buildFlightTime(int year, int monthValue, int dayMonth, String time) {
-		return LocalDateTime.of(LocalDate.of(year, monthValue, dayMonth), LocalTime.parse(time));
 	}
 }

@@ -6,7 +6,6 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -15,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.ryanair.apis.exceptions.ServiceUnavailableException;
 import com.ryanair.apis.models.RyanairRouteResource;
 import com.ryanair.apis.models.RyanairScheduleResource;
@@ -23,11 +23,17 @@ import com.ryanair.apis.utils.InterconnectingFlightsUtils;
 @Service("ryanairService")
 public class RyanairAPIsService implements IRyanairAPIsService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(RyanairAPIsService.class);
-	
-	@Autowired
-	private RestTemplate restTemplate;
-	@Autowired
-	private ObjectMapper mapper;
+	private final RestTemplate restTemplate;
+	private final ObjectMapper mapper;
+
+	/**
+	 * @param restTemplate
+	 * @param mapper
+	 */
+	public RyanairAPIsService() {
+		this.restTemplate = new RestTemplate();
+		this.mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+	}
 
 	@Override
 	public RyanairRouteResource[] routesAPI() throws Exception {
@@ -52,8 +58,8 @@ public class RyanairAPIsService implements IRyanairAPIsService {
 		params.put("year", String.valueOf(year));
 		params.put("month", String.valueOf(month));
 		try {
-			ResponseEntity<String> entity = restTemplate.exchange(InterconnectingFlightsUtils.SCHEDULES_ENDPOINT, HttpMethod.GET, null,
-					String.class, params);
+			ResponseEntity<String> entity = restTemplate.exchange(InterconnectingFlightsUtils.SCHEDULES_ENDPOINT,
+					HttpMethod.GET, null, String.class, params);
 			LOGGER.info("Ryanair Schedules API result code {} with parameters {}", entity.getStatusCodeValue(), params);
 			switch (entity.getStatusCode()) {
 			case OK:
@@ -78,7 +84,7 @@ public class RyanairAPIsService implements IRyanairAPIsService {
 				return emptyResource;
 			default:
 				throw new ServiceUnavailableException("Ryanair Schedules API", e);
-			}			
+			}
 		} catch (Exception e) {
 			throw new ServiceUnavailableException("Ryanair Schedules API", e);
 		}

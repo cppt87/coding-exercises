@@ -1,12 +1,15 @@
 package com.ryanair.apis.controllers;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Deque;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +37,6 @@ import com.ryanair.apis.models.Leg;
 import com.ryanair.apis.models.RyanairRouteResource;
 import com.ryanair.apis.models.RyanairScheduleResource;
 import com.ryanair.apis.models.SolutionResource;
-import com.ryanair.apis.models.SuitableRoutesList;
 import com.ryanair.apis.services.IRyanairAPIsService;
 import com.ryanair.apis.utils.DirectFlightEnum;
 import com.ryanair.apis.utils.InterconnectingFlightsUtils;
@@ -87,9 +89,9 @@ public class InterconnectingFlightsController {
 		/*
 		 * list of 0 and/or 1 stop routes. Later we will iterate over a useful
 		 * list of this type: [["DUB", "WRO"], ["DUB", "STN", "WRO"]]. List is
-		 * ordered; if a direct flight exists, it will be the first element.
+		 * ordered; if a direct flight exists, it will be the last element.
 		 */
-		SuitableRoutesList<String> foundRoutes = new SuitableRoutesList<String>();
+		List<List<String>> foundRoutes = new ArrayList<List<String>>();
 		/*
 		 * In order to extract all the 1 stop flights, we need to create such an
 		 * adjacency list: [key=STOP -> value=FROM || key=STOP -> value=TO].
@@ -135,6 +137,15 @@ public class InterconnectingFlightsController {
 					graph.put(route.getAirportFrom(), arrival);
 			}
 		}
+		// sort found routes by number of stops, in a descending way
+		Collections.sort(foundRoutes, new Comparator<List<String>>() {
+
+			@Override
+			public int compare(List<String> o1, List<String> o2) {
+				return o2.size() - o1.size();
+			}
+		});
+
 		// for each route
 		for (List<String> foundRoute : foundRoutes) {
 			// calculate solutions
@@ -142,7 +153,7 @@ public class InterconnectingFlightsController {
 		}
 
 		if (this.solutions.isEmpty())
-			throw new NotFoundException();
+			throw new NotFoundException(String.format("No results found for the route [%s - %s]", departure, arrival));
 		else
 			return new ResponseEntity<Deque<SolutionResource>>(this.solutions, HttpStatus.OK);
 	}
@@ -163,14 +174,14 @@ public class InterconnectingFlightsController {
 	 */
 	private void combineSolutions(List<String> route, LocalDateTime departureTime, LocalDateTime arrivalTime)
 			throws Exception {
-		// cycle over input temporal range
-		while (!departureTime.isAfter(arrivalTime)) {
+		// cycle over different months
+		for (int month = departureTime.getMonthValue(); month <= arrivalTime.getMonthValue(); month++) {
 			/*
 			 * create a unique cache key based on concatenation of departure
 			 * IATA code, arrival IATA code, departure year and departure month
 			 */
 			String key = new StringBuilder(route.get(DEPARTURE)).append(route.get(STOP)).append(departureTime.getYear())
-					.append(departureTime.getMonthValue()).toString();
+					.append(month).toString();
 			// retrieve schedules from cache (if exists)...
 			RyanairScheduleResource schedules;
 			if (this.cache.containsKey(key)) {
@@ -178,33 +189,28 @@ public class InterconnectingFlightsController {
 				// ... or from Ryanair's Schedules API service
 			} else {
 				schedules = this.ryanairService.schedulesAPI(route.get(DEPARTURE), route.get(STOP),
-						departureTime.getYear(), departureTime.getMonthValue());
+						departureTime.getYear(), month);
 				this.cache.put(key, schedules);
 			}
 
-			// cycle over each daily schedule...
-			Iterator<Day> dayIt = schedules.getDays().iterator();
-			Day day;
 			/*
 			 * ... until provided arrival time is not after the undergoing day
 			 * (useful to save iterations due to the ordered list returned by
 			 * Ryanair's Schedules API service)
 			 */
-			while (dayIt.hasNext() && (day = dayIt.next()).getDay() <= arrivalTime.getDayOfMonth()) {
+			for (Day day : schedules.getDays()) {
+				// build flight departure date
+				LocalDateTime flightDeparture = departureTime.withMonth(month).withDayOfMonth(day.getDay());
 				// if we are between departure and arrival day (inclusive)
-				if (day.getDay() >= departureTime.getDayOfMonth()) {
+				if (!flightDeparture.isBefore(departureTime) && !flightDeparture.isAfter(arrivalTime)) {
 					// check each flight of the day
-					Iterator<Flight> flightIt = day.getFlights().iterator();
-					while (flightIt.hasNext()) {
-						Flight flight = flightIt.next();
+					for (Flight flight : day.getFlights()) {
 						// get flight departure date-time
-						LocalDateTime flightDeparture = InterconnectingFlightsUtils.buildFlightTime(
-								departureTime.getYear(), departureTime.getMonthValue(), day.getDay(),
-								flight.getDepartureTime());
+						flightDeparture = flightDeparture.with(LocalTime.parse(flight.getDepartureTime()));
 						// get flight arrival date-time
-						LocalDateTime flightArrival = InterconnectingFlightsUtils.buildFlightTime(
-								departureTime.getYear(), departureTime.getMonthValue(), day.getDay(),
-								flight.getArrivalTime());
+						LocalDateTime flightArrival = LocalDateTime.of(
+								LocalDate.of(flightDeparture.getYear(), month, day.getDay()),
+								LocalTime.parse(flight.getArrivalTime()));
 						// check data interval (inclusive)
 						if (!flightDeparture.isBefore(departureTime) && !flightArrival.isAfter(arrivalTime)) {
 							// it is a suitable leg; let's create the resource
@@ -259,8 +265,7 @@ public class InterconnectingFlightsController {
 								 * new instance of (partial) Solution, making
 								 * use of the just copied first leg
 								 */
-								if (flightIt.hasNext() || dayIt.hasNext())
-									this.createAndPushSolution(DirectFlightEnum.NON_DIRECT_FLIGHT, first);
+								this.createAndPushSolution(DirectFlightEnum.NON_DIRECT_FLIGHT, first);
 								/*
 								 * case of direct flight. Create a single leg
 								 * Solution and push it into the solutions queue
@@ -272,8 +277,6 @@ public class InterconnectingFlightsController {
 					}
 				}
 			}
-			// add one month
-			departureTime = departureTime.plusMonths(1);
 		}
 	}
 
@@ -310,7 +313,7 @@ public class InterconnectingFlightsController {
 	 *            list for adding just created route
 	 * @return true (as specified by {@link Collection.add})
 	 */
-	private boolean createAndAddRoute(String departure, String arrival, SuitableRoutesList<String> toRoutesList) {
+	private boolean createAndAddRoute(String departure, String arrival, List<List<String>> toRoutesList) {
 		// create a two elements long list
 		List<String> zeroStopRoute = new ArrayList<String>(2);
 		// add departure IATA code
@@ -335,8 +338,7 @@ public class InterconnectingFlightsController {
 	 *            list for adding just created route
 	 * @return true (as specified by {@link Collection.add})
 	 */
-	private boolean createAndAddRoute(String departure, String stop, String arrival,
-			SuitableRoutesList<String> toRoutesList) {
+	private boolean createAndAddRoute(String departure, String stop, String arrival, List<List<String>> toRoutesList) {
 		// create a three elements long list
 		List<String> oneStopRoute = new ArrayList<String>(3);
 		// add departure IATA code

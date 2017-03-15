@@ -46,7 +46,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(value = { NotFoundException.class })
 	@ResponseBody
 	public ResponseEntity<ErrorResource> handleNotFoundException(NotFoundException e) {
-		LOGGER.error("Exception caught: ", e);
+		LOGGER.info(e.getMessage());
 		return new ResponseEntity<ErrorResource>(this.errorBuilder(e), HttpStatus.NOT_FOUND);
 	}
 
