@@ -1,0 +1,13 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"id": "/concierge-agent-status-enum.json",
+	"title": "Chat's enumeration of the available user type.",
+	"description": "This object represents the enum of chat's available user type.",
+	"enum": [
+		0,
+		1,
+		2,
+		3
+	],
+	"readOnly": true
+}

@@ -1,0 +1,17 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"id": "/genesys-notice-type.json",
+	"title": "Genesys enumeration of the available notice type",
+	"description": "This object represents the enum of Genesys notice event type",
+	"enum": [
+		0,
+		1,
+		2,
+		3,
+		4,
+		5,
+		6,
+		10,
+		11	],
+	"readOnly": true
+}

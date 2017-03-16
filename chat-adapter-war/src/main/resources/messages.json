@@ -1,0 +1,74 @@
+[
+	{
+		"Msg": [
+			{
+				"textw": "TypingStopped",
+				"noticeType": "3",
+				"eventType": "3",
+				"userNickName": "Monfab",
+				"userType": "0"
+			},
+			{
+				"textw": "This is a test message",
+				"noticeType": "0",
+				"eventType": "1",
+				"userNickName": "Monfab",
+				"userType": "0"
+			}
+		],
+		"errorDesc": "",
+		"lastPosition": 6,
+		"error": 0,
+		"ProtocolVersion": "1.1"
+	},
+	{
+		"Msg": [
+			{
+				"textw": "",
+				"noticeType": "0",
+				"eventType": "0",
+				"userNickName": "system",
+				"userType": "3"
+			},
+			{
+				"textw": "agent will be with you shortly...",
+				"noticeType": "0",
+				"eventType": "1",
+				"userNickName": "system",
+				"userType": "3"
+			}
+		],
+		"errorDesc": "",
+		"lastPosition": 3,
+		"error": 0,
+		"ProtocolVersion": "1.1"
+	},
+	{
+		"Msg": [
+			{
+				"textw": "",
+				"noticeType": "0",
+				"eventType": "2",
+				"userNickName": "Marco.Tommasucci",
+				"userType": "1"
+			},
+			{
+				"textw": "",
+				"noticeType": "0",
+				"eventType": "2",
+				"userNickName": "savy87",
+				"userType": "0"
+			}
+		],
+		"errorDesc": "",
+		"lastPosition": 0,
+		"error": 0,
+		"ProtocolVersion": "1.1"
+	},
+	{
+		"errorDesc": "Connection status : 'EventStatus' (4) attributes:\n\tRequestResult [str] = ERROR\n\tPartyId [int] = 0\n\tOccurredAt [str] = \"2016-10-27T09:33:53Z\"\n\tReferenceId [int] = 2\n\tDescription:\n\t\tErrorId [str] = \"8196\"\n\t\tText [str] = \"No such user exists\"",
+		"lastPosition": 0,
+		"error": 8,
+		"ProtocolVersion": "1.1"
+	}
+]

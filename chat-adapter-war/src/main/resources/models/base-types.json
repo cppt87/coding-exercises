@@ -1,0 +1,263 @@
+{
+  "$schema"     : "http://json-schema.org/draft-04/schema#",
+  "definitions" : {
+    "id" : {
+      "title"       : "Id",
+      "description" : "Unique identifier of the object",
+      "readOnly"    : true,
+      "type"        : "string"
+    },
+    "api-key" : {
+      "title"       : "API Key",
+      "description" : "Uniquely assign a client to an API.",
+      "readOnly"    : true,
+      "type"        : "string"
+    },
+    "transactionId" : {
+      "title"       : "Transaction Id",
+      "description" : "Unique identifier of the transaction object",
+      "readOnly"    : true,
+      "type"        : "string"
+    },
+    "orderId":{
+      "title"       : "Order Id",
+      "description" : "Unique identifier of the any type of order",
+      "type": "string",
+      "readOnly"    : true
+    },
+    "loanId":{
+      "title"       : "Loan Id",
+      "description" : "Unique identifier of the any type of loan",
+      "type": "string",
+      "readOnly"    : true
+    },
+    "cardId":{
+      "title"       : "Card Id",
+      "description" : "Unique identifier of the any type of Card",
+      "type": "string",
+      "readOnly"    : true
+    },
+    "cardPin":{
+      "title"       : "Card Pin",
+      "description" : "A personal identification number is a numeric password used to authenticate a user to use a card",
+      "type": "string",
+      "readOnly"    : true
+    },
+    "goalId" : {
+      "title"       : "Goal Id",
+      "description" : "Unique identifier of the saving goal object",
+      "readOnly"    : true,
+      "type"        : "string"
+    },
+    "requestId" : {
+      "title"       : "Request Id",
+      "description" : "Unique identifier of a request to the APIs",
+      "readOnly"    : true,
+      "type"        : "string"
+    },
+    "interactionId" : {
+      "title"       : "Interaction Id",
+      "description" : "Unique identifier of a concierge interaction",
+      "readOnly"    : true,
+      "type"        : "string"
+    },
+    "ruleId" : {
+      "title"       : "Rule Id",
+      "description" : "Unique identifier of the saving rule object",
+      "readOnly"    : true,
+      "type"        : "string"
+    },
+    "installmentPlanId":{
+      "title"       : "Id",
+      "description" : "Unique identifier of the installment plan",
+      "readOnly"    : true,
+      "type"        : "string"
+    },
+    "trn":{
+      "title"       : "Transaction Reference Number",
+      "description" : "A number assigned to the payment so it can be found once filled.",
+      "type": "string",
+      "readOnly"    : true
+    },
+    "agentId" : {
+      "title"       : "Agent Id",
+	  "description" : "Concierge agent id",
+      "readOnly"    : true,
+      "type"        : "string"
+    },
+    "accountId" : {
+      "title"       : "Account Id",
+      "description" : "Unique identifier of the account object",
+      "readOnly"    : true,
+      "type"        : "string"
+    },
+    "userId" : {
+      "title"       : "User Id",
+      "description" : "Unique identifier of the user object",
+      "readOnly"    : true,
+      "type"        : "string"
+    },
+    "crmTicketId" : {
+      "title"       : "CRM Ticket Id",
+      "description" : "Unique identifier of a CRM ticket",
+      "readOnly"    : true,
+      "type"        : "string"
+    },
+    "accountNumber" : {
+      "title"       : "Account Number",
+      "description" : "Account number may refer to a number used to identify a Buddybank account",
+      "type"        : "string",
+      "maxLength"   : 12
+    },
+    "accountStatus" : {
+      "title"       : "Account Status",
+      "description" : "The Account Status indicates what a user can or can't see or manage the Buddybank account.",
+      "enum"        : ["ACTIVE", "INACTIVE", "BLOCKED", "CLOSED"]
+    },
+    "bankName" : {
+      "description" : "The name of the bank",
+      "type"        : "string",
+      "readOnly"    : true
+    },
+    "currency" : {
+      "description" : "Currency of an Account or an Amount. ISO 4217 alpha-3 - 3 letter upcase e.g EUR",
+      "type"        : "string",
+      "enum"        : ["EUR", "GBP", "USD"],
+      "default"     : "EUR"
+    },
+    "createdAt" : {
+      "description" : "Creation date-time, never changes. ISO 8601 Date-Time",
+      "format"      : "date-time",
+      "type"        : "string",
+      "readOnly"    : true
+    },
+    "updatedAt" : {
+      "description" : "Last update date-time. ISO 8601 Date-Time",
+      "format"      : "date-time",
+      "type"        : "string",
+      "readOnly"    : true
+    },
+    "bookingDate" : {
+      "description" : "Booking date-time. ISO 8601 Date-Time",
+      "format"      : "date-time",
+      "type"        : "string",
+      "readOnly"    : true
+    },
+    "valueDate" : {
+      "description" : "Value date-time. ISO 8601 Date-Time",
+      "format"      : "date-time",
+      "type"        : "string",
+      "readOnly"    : true
+    },
+    "executionDate" : {
+      "description" : "Execution date-time. ISO 8601 Date-Time",
+      "format"      : "date-time",
+      "type"        : "string",
+      "readOnly"    : true
+    },
+    "blockedAt" : {
+      "description" : "Account block date-time. ISO 8601 Date-Time",
+      "format"      : "date-time",
+      "type"        : "string",
+      "readOnly"    : true
+    },
+    "date" : {
+      "description" : "Any type of date. ISO 8601 Date",
+      "format"      : "date",
+      "type"        : "string"
+    },
+    "iban" : {
+      "title" : "IBAN",
+      "description"    : "The International Bank Account Number  is an internationally agreed system of identifying bank accounts across national borders to facilitate the communication and processing of cross border transactions. Checksum is calculated as described in ISO 13616-1, 2 digits MOD97 inserted after the country code",
+      "type"        : "string",
+      "maxLength"   : 34,
+      "pattern"     : "^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$",
+      "readOnly"    : true
+    },
+    "ibanPretty" : {
+      "title" : "Pretty Printed IBAN",
+      "description" : "The pretty printed version of Iban",
+      "type"        : "string",
+      "readOnly"    : true
+    },
+    "bban" : {
+      "title" : "BBAN",
+      "description"    : "stands for Basic Bank Account Number which is a series of alphanumeric characters comprising the code number of the Financial Institutions and their branches in each country and the Customer account number. BBAN is part of IBAN.",
+      "type"        : "string",
+      "maxLength"   : 30,
+      "pattern"     : "^[A-Z0-9]{11,30}$",
+      "readOnly"    : true
+    },
+    "bic" : {
+      "title" : "BIC/SWIFT",
+      "description" : "Bank Identifier Code as specified by the ISO 9362 in conjunction with the BBAN is used by International bank transactions as routing information",
+      "type"        : "string",
+      "pattern"     : "^[A-Z0-9]{8,11}$",
+      "maxLength"   : 11,
+      "readOnly"    : true
+    },
+    "country" : {
+      "description" : "Country code as defined in ISO3166 alpha2. e.g DE, GB",
+      "type"        : "string",
+      "minLength"   : 2,
+      "maxLength"   : 2
+    },
+    "geolocalization" : {
+      "title" : "GEO Location",
+      "description" : "A coordinate system that enables every location on the Earth to be specified by a set of numbers or letters, or symbols.",
+      "type"        : "object",
+      "properties"  :{
+        "latitude" :{
+          "description" : "The latitude of a point on the Earth's surface is the angle between the equatorial plane and the straight line that passes through that point and through (or close to) the center of the Earth.",
+          "type"        : "string"
+        },
+        "longitude" :{
+          "description" : "The longitude of a point on the Earth's surface is the angle east or west from a reference meridian to another meridian that passes through that point.",
+          "type"        : "string"
+        }
+      }
+    },
+    "amount" : {
+      "type"        : "string",
+	    "pattern"     : "^-?[0-9]+(\\.[0-9]{2})?$",
+      "readOnly"    : true
+    },
+    "transferAmount" : {
+      "description" : "The transferred amount in account currency. Must be greater than 0",
+      "type"        : "string",
+	    "pattern"     : "^[0-9]+(\\.[0-9]{2})?$"
+    },
+    "url" : {
+      "type"        : "string",
+      "format"      : "url"
+    },
+    "email":
+		{
+			"type": "string",
+			"description": "E-mail",
+			"format": "email"
+		},
+    "Continents":{
+      "enum":["EUROPE","NORTH_AMERICA","SOUTH_AMERICA","ASIA","AFRICA","AUSTRALIA"]
+    },
+    "Months" : {
+      "title"       : "Months",
+      "enum"        : ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"]
+    },
+    "latest" : {
+      "description" : "This value rapresent the number of the latest transaction in the transaction filter. It sostitutes the datefrom and dateto",
+      "type"        : "number"
+    },
+    "dateFrom" : {
+      "$ref" : "#/definitions/date"
+    },
+    "dateTo" : {
+      "$ref" : "#/definitions/date"
+    },
+    "twitter" : {
+      "description" : "Twitter username",
+      "type"        : "string",
+      "pattern"     : "^@(\\w){1,15}$"
+    }
+  }
+}

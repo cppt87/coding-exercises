@@ -1,0 +1,105 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"id": "/chat-message.json",
+	"title": "Chat Message",
+	"description": "This object represents a message sent by the buddybank chat",
+	"definitions": {
+		"msgHeader": {
+			"description": "This object represents the header of a message sent by the buddybank chat",
+			"type": "object",
+			"properties": {
+				"key": {
+					"$ref": "base-types.json#definitions/interactionId"
+				},
+				"userName": {
+					"type": "string",
+					"title": "User name"
+				}
+			},
+			"required": [
+				"key",
+				"userName"
+			]
+		},
+		"message": {
+			"description": "This object represents the mutable payload of a message sent by the buddybank chat",
+			"type": "object",
+			"properties": {
+				"id": {
+					"$ref": "base-types.json#definitions/id"
+				},
+				"textw": {
+					"type": "string",
+					"title": "Message text"
+				},
+				"timestamp": {
+					"$ref": "base-types.json#definitions/executionDate"
+				},
+				"noticeType": {
+					"type": "integer",
+					"title": "Genesys notice type"
+				},
+				"eventType": {
+					"type": "integer",
+					"title": "Genesys event type"
+				},
+				"userNickName": {
+					"type": "string",
+					"title": "Nick name of the sender of the message"
+				},
+				"userType": {
+					"type": "integer",
+					"title": "Genesys user type"
+				}
+			},
+			"required": [
+				"id",
+				"noticeType"
+			]
+		}
+	},
+	"type": "object",
+	"properties": {
+		"header": {
+			"$ref": "#/definitions/msgHeader"
+		},
+		"body": {
+			"description": "This object represents the body of a message sent by the buddybank chat",
+			"type": "object",
+			"properties": {
+				"Msg": {
+					"type": "array",
+					"title": "Messages list",
+					"items": {
+						"$ref": "#definitions/message"
+					},
+					"uniqueItems": true
+				},
+				"lastPosition": {
+					"type": "integer",
+					"title": "lastPosition value specified in the last message sent by Genesys"
+				},
+				"messagesStatus": {
+					"type": "integer",
+					"title": "State of the messages"
+				},
+				"error": {
+					"type": "integer",
+					"title": "Genesys error code"
+				},
+				"errorDesc": {
+					"type": "string",
+					"title": "Genesys error description"
+				}
+			},
+			"required": [
+				"messagesList",
+				"messagesStatus"
+			]
+		}
+	},
+	"required": [
+		"header",
+		"body"
+	]
+}
