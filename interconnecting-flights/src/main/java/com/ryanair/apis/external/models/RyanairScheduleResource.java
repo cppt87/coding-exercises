@@ -1,5 +1,5 @@
 
-package com.ryanair.apis.models;
+package com.ryanair.apis.external.models;
 
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -19,79 +19,81 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 
 
 /**
- * List of flights scheduled in a day
+ * Ryanair Schedule Resource schema
+ * <p>
+ * This object represents a list of available flights for a given departure airport IATA code, an arrival airport IATA code, a year and a month
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-    "day",
-    "flights"
+    "month",
+    "days"
 })
-public class Day {
+public class RyanairScheduleResource {
 
     /**
-     * A day of a month
+     * A month of a year
      * (Required)
      * 
      */
-    @JsonProperty("day")
-    @JsonPropertyDescription("A day of a month")
-    private Integer day;
+    @JsonProperty("month")
+    @JsonPropertyDescription("A month of a year")
+    private Integer month;
     /**
-     * A list of flights for given day
+     * Daily flights schedule
      * <p>
      * 
      * (Required)
      * 
      */
-    @JsonProperty("flights")
+    @JsonProperty("days")
     @JsonDeserialize(as = java.util.LinkedHashSet.class)
-    private Set<Flight> flights = new LinkedHashSet<Flight>();
+    private Set<Day> days = new LinkedHashSet<Day>();
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     /**
-     * A day of a month
+     * A month of a year
      * (Required)
      * 
      */
-    @JsonProperty("day")
-    public Integer getDay() {
-        return day;
+    @JsonProperty("month")
+    public Integer getMonth() {
+        return month;
     }
 
     /**
-     * A day of a month
+     * A month of a year
      * (Required)
      * 
      */
-    @JsonProperty("day")
-    public void setDay(Integer day) {
-        this.day = day;
+    @JsonProperty("month")
+    public void setMonth(Integer month) {
+        this.month = month;
     }
 
     /**
-     * A list of flights for given day
+     * Daily flights schedule
      * <p>
      * 
      * (Required)
      * 
      */
-    @JsonProperty("flights")
-    public Set<Flight> getFlights() {
-        return flights;
+    @JsonProperty("days")
+    public Set<Day> getDays() {
+        return days;
     }
 
     /**
-     * A list of flights for given day
+     * Daily flights schedule
      * <p>
      * 
      * (Required)
      * 
      */
-    @JsonProperty("flights")
-    public void setFlights(Set<Flight> flights) {
-        this.flights = flights;
+    @JsonProperty("days")
+    public void setDays(Set<Day> days) {
+        this.days = days;
     }
 
     @Override
@@ -111,7 +113,7 @@ public class Day {
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(day).append(flights).append(additionalProperties).toHashCode();
+        return new HashCodeBuilder().append(month).append(days).append(additionalProperties).toHashCode();
     }
 
     @Override
@@ -119,11 +121,11 @@ public class Day {
         if (other == this) {
             return true;
         }
-        if ((other instanceof Day) == false) {
+        if ((other instanceof RyanairScheduleResource) == false) {
             return false;
         }
-        Day rhs = ((Day) other);
-        return new EqualsBuilder().append(day, rhs.day).append(flights, rhs.flights).append(additionalProperties, rhs.additionalProperties).isEquals();
+        RyanairScheduleResource rhs = ((RyanairScheduleResource) other);
+        return new EqualsBuilder().append(month, rhs.month).append(days, rhs.days).append(additionalProperties, rhs.additionalProperties).isEquals();
     }
 
 }

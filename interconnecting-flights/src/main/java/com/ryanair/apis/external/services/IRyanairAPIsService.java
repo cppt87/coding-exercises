@@ -1,7 +1,7 @@
-package com.ryanair.apis.services;
+package com.ryanair.apis.external.services;
 
-import com.ryanair.apis.models.RyanairRouteResource;
-import com.ryanair.apis.models.RyanairScheduleResource;
+import com.ryanair.apis.external.models.RyanairRouteResource;
+import com.ryanair.apis.external.models.RyanairScheduleResource;
 
 public interface IRyanairAPIsService {
 	/*

@@ -1,4 +1,4 @@
-package com.ryanair.apis.exceptions;
+package com.ryanair.apis.exceptions.handlers;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -15,6 +15,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import com.ryanair.apis.exceptions.BadRequestException;
+import com.ryanair.apis.exceptions.NotFoundException;
+import com.ryanair.apis.exceptions.RequestRangeNotSatisfiableException;
+import com.ryanair.apis.exceptions.ServiceUnavailableException;
 import com.ryanair.apis.models.Error;
 import com.ryanair.apis.models.ErrorResource;
 

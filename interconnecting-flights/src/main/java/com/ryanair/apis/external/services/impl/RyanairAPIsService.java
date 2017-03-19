@@ -1,4 +1,4 @@
-package com.ryanair.apis.services;
+package com.ryanair.apis.external.services.impl;
 
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -16,8 +16,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.ryanair.apis.exceptions.ServiceUnavailableException;
-import com.ryanair.apis.models.RyanairRouteResource;
-import com.ryanair.apis.models.RyanairScheduleResource;
+import com.ryanair.apis.external.models.RyanairRouteResource;
+import com.ryanair.apis.external.models.RyanairScheduleResource;
+import com.ryanair.apis.external.services.IRyanairAPIsService;
 import com.ryanair.apis.utils.InterconnectingFlightsUtils;
 
 @Service("ryanairService")

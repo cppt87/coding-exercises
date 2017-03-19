@@ -1,5 +1,5 @@
 
-package com.ryanair.apis.models;
+package com.ryanair.apis.external.models;
 
 import java.util.HashMap;
 import java.util.Map;
