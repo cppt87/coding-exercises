@@ -1,5 +1,8 @@
 package cppt87.codility.iterations;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class Arrays {
 	/*
 	 * A non-empty zero-indexed array A consisting of N integers is given. The
@@ -43,15 +46,16 @@ public class Arrays {
 	 * Elements of input arrays can be modified.
 	 */
 	public static int oddOccurrencesInArray(int[] A) {
-		int count = 0;
-		int half = A.length / 2;
+		Set<Integer> occ = new HashSet<Integer>();
 		for (int i = 0; i < A.length; i++) {
-			if (i < half)
-				count += A[i];
-			else
-				count -= A[i];
+			if (occ.contains(A[i])) {
+				occ.remove(A[i]);
+			} else {
+				occ.add(A[i]);
+			}
 		}
-		return count > 0 ? count : count * -1;
+		
+		return occ.iterator().next();
 	}
 
 }
