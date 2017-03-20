@@ -9,10 +9,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,14 +37,14 @@ public class InterconnectionsService implements IInterconnectionsService<Solutio
 	private static final int DEPARTURE = 0;
 	private static final int STOP = 1;
 	private static final int ARRIVAL = 2;
-	@Autowired
 	// Ryanair APIs
+	@Autowired
 	private IRyanairAPIsService ryanairService;
-	@Autowired
 	// Cache of RyanairScheduleResource instances
-	private Map<String, RyanairScheduleResource> cache;
 	@Autowired
+	private Map<String, RyanairScheduleResource> cache;
 	// retrieve the routes list from Ryanair's Routes API service
+	@Autowired
 	private RyanairRouteResource[] routes;
 	// LIFO queue of solutions
 	private Deque<SolutionResource> solutions;
@@ -66,7 +66,7 @@ public class InterconnectionsService implements IInterconnectionsService<Solutio
 		 * In order to extract all the 1 stop flights, we need to create such an
 		 * adjacency list: [key=STOP -> value=FROM || key=STOP -> value=TO].
 		 */
-		Properties graph = new Properties();
+		Set<String> graph = new HashSet<String>();
 
 		// for each route coming from Ryanair's Routes API service
 		for (RyanairRouteResource route : routes) {
@@ -81,13 +81,13 @@ public class InterconnectionsService implements IInterconnectionsService<Solutio
 				 * (different arrival), an insert of type key=STOP -> value=TO
 				 * already took place previously
 				 */
-				if (graph.containsKey(route.getAirportTo()))
+				if (graph.contains(route.getAirportTo()))
 					this.createAndAddRoute(departure, route.getAirportTo(), arrival, foundRoutes);
 				/*
 				 * otherwise, perform the insert key=STOP -> value=FROM
 				 */
 				else
-					graph.put(route.getAirportTo(), departure);
+					graph.add(route.getAirportTo());
 				// case of 1 stop flight: same arrival and different departure
 			} else if (!departure.equalsIgnoreCase(route.getAirportFrom())
 					&& arrival.equalsIgnoreCase(route.getAirportTo())) {
@@ -96,13 +96,13 @@ public class InterconnectionsService implements IInterconnectionsService<Solutio
 				 * (different arrival), an insert of type key=STOP -> value=FROM
 				 * already took place previously
 				 */
-				if (graph.containsKey(route.getAirportFrom()))
+				if (graph.contains(route.getAirportFrom()))
 					this.createAndAddRoute(departure, route.getAirportFrom(), arrival, foundRoutes);
 				/*
 				 * otherwise, perform the insert key=STOP -> value=TO
 				 */
 				else
-					graph.put(route.getAirportFrom(), arrival);
+					graph.add(route.getAirportFrom());
 			}
 		}
 		// sort found routes by number of stops, in a descending way

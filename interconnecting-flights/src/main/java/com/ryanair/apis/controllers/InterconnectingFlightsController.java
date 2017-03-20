@@ -28,7 +28,7 @@ import com.ryanair.apis.utils.InterconnectingFlightsUtils;
 @Validated
 public class InterconnectingFlightsController {
 	@Autowired
-	IInterconnectionsService<SolutionResource> interconnectionsService;
+	private IInterconnectionsService<SolutionResource> interconnectionsService;
 
 	@GetMapping(InterconnectingFlightsUtils.GET_INTERCONNECTIONS)
 	public ResponseEntity<Deque<SolutionResource>> getInterconnections(
