@@ -1,4 +1,4 @@
-package cppt87.codility.iterations;
+package cppt87.codility.solutions;
 
 public class Iterations {
 	/*
