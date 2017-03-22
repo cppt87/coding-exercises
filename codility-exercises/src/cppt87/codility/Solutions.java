@@ -9,9 +9,9 @@ public class Solutions {
 		// System.out.println(Iterations.binaryGap(345));
 
 		// System.out.println(Arrays.oddOccurrencesInArray(A));
-		int A[] = new int[] { -1000, 1000 };
+		int A[] = new int[] { 3, 1, 2, 4, 3 };
 		// System.out.println(Arrays.cyclicRotation(A, 3));
 		// System.out.println(TimeComplexity.frogJmp(10, 100, 30));
-		System.out.println(TimeComplexity.solution(A));
+		System.out.println(TimeComplexity.tapeEquilibrium(A));
 	}
 }

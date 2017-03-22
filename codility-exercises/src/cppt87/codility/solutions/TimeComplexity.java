@@ -137,17 +137,17 @@ public class TimeComplexity {
 	 * 
 	 * Elements of input arrays can be modified.
 	 */
-	public static int solution(int[] A) {
-        int[] B = new int[A.length];
-        B[0] = A[0];
-        for(int i = 1; i < A.length; i++) {
-            B[i] = B[i - 1] + A[i];
-        }
-        int min = Integer.MAX_VALUE;
-        for(int i = 0; i < B.length; i++) {
-            min = Math.min(min, Math.abs(B[i] - (B[B.length - 1] - B[i])));
-        }
-        return min;
-    }
+	public static int tapeEquilibrium(int[] A) {
+		int min = Integer.MAX_VALUE;
+		int[] B = new int[A.length];
+		int i = 0;
+		B[i] = A[i];
+		for (++i; i < A.length; i++)
+			B[i] = B[i - 1] + A[i];
 
+		for (i = 1; i < B.length; i++)
+			min = Math.min(min, Math.abs(B[i - 1] - (B[B.length - 1] - B[i - 1])));
+
+		return min;
+	}
 }
